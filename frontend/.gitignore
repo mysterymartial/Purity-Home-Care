@@ -1,0 +1,69 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+.nyc_output/
+*.lcov
+
+# Next.js
+/.next/
+/out/
+
+# Production
+/build
+dist/
+
+# Environment and Secret Files
+.env
+.env.*
+.env.local
+.env.development
+.env.production
+.env.test
+*.env
+.envrc
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+*.swp
+*.swo
+
+# IDE Files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# Debug Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+logs/
+
+# Misc
+rubbish.txt
+*.pem
+*.key
+*.cert
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
