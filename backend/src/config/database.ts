@@ -8,15 +8,30 @@ export const connectDatabase = async (): Promise<void> => {
   }
 
   try {
+    console.log('🔄 Attempting to connect to MongoDB Atlas...');
     await mongoose.connect(mongoUri, {
       retryWrites: true,
       w: 'majority',
     });
     console.log('✅ Connected to MongoDB Atlas');
     console.log(`📊 Database: ${mongoose.connection.name}`);
+    console.log(`🔗 Connection State: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'}`);
+    
+    // Log connection events
+    mongoose.connection.on('error', (err) => {
+      console.error('❌ MongoDB connection error:', err);
+    });
+    
+    mongoose.connection.on('disconnected', () => {
+      console.warn('⚠️ MongoDB disconnected');
+    });
+    
+    mongoose.connection.on('reconnected', () => {
+      console.log('✅ MongoDB reconnected');
+    });
   } catch (error) {
     console.error('❌ MongoDB connection error:', error);
-    process.exit(1);
+    throw error;
   }
 };
 

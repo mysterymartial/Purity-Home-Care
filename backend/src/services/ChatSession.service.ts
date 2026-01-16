@@ -4,19 +4,28 @@ import { MessageRepository } from '../repositories/Message.repository';
 import { CreateChatSessionDTO, UpdateChatSessionStatusDTO, ChatSessionResponseDTO } from '../dto/ChatSession.dto';
 import { CreateMessageDTO, MessageResponseDTO } from '../dto/Message.dto';
 import mongoose from 'mongoose';
+import { EmailService } from './Email.service';
 
 export class ChatSessionService {
   private chatSessionRepository: ChatSessionRepository;
   private messageRepository: MessageRepository;
+  private emailService: EmailService;
 
   constructor() {
     this.chatSessionRepository = new ChatSessionRepository();
     this.messageRepository = new MessageRepository();
+    this.emailService = new EmailService();
   }
 
   async createSession(): Promise<ChatSessionResponseDTO> {
     const customerId = uuidv4();
     const session = await this.chatSessionRepository.create({ customerId });
+    
+    // Send email notification for new chat session
+    this.emailService.sendNewChatNotification(session._id.toString(), customerId).catch(err => {
+      console.error('Failed to send new chat notification:', err);
+    });
+    
     return this.toResponseDTO(session);
   }
 
@@ -52,6 +61,17 @@ export class ChatSessionService {
       chatSessionId: new mongoose.Types.ObjectId(sessionId),
     });
 
+    // Send email notification if message is from customer
+    if (data.sender === 'customer') {
+      this.emailService.sendNewMessageNotification(
+        sessionId,
+        session.customerId,
+        data.content
+      ).catch(err => {
+        console.error('Failed to send new message notification:', err);
+      });
+    }
+
     return this.messageToResponseDTO(message);
   }
 
@@ -80,4 +100,7 @@ export class ChatSessionService {
     };
   }
 }
+
+
+
 

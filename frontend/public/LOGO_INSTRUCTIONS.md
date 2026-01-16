@@ -40,3 +40,6 @@ After adding the logo:
 2. Check the navbar and footer
 3. Verify it looks good on mobile devices
 
+
+
+

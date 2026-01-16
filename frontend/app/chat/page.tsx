@@ -16,8 +16,17 @@ export default function ChatPage() {
   const [input, setInput] = useState('');
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [isEmojiOpen, setIsEmojiOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const emojiPopoverRef = useRef<HTMLDivElement>(null);
+  const emojiButtonRef = useRef<HTMLButtonElement>(null);
+
+  const EMOJIS = [
+    '😀','😃','😄','😁','😅','😂','🤣','😊','🙂','😉','😍','😘','😌','😎','🥳','🤗','🤔','😮','😢','😭','😡',
+    '👍','👎','🙏','👏','🤝','👋','💪','❤️','💙','💚','✨','⭐','🔥','🎉','✅','❗','💬','📞',
+    '🧑‍⚕️','🏠','🧓','🧑‍🦽','🛏️','💊','🧼','🧺',
+  ] as const;
 
   const whatsappLink = getWhatsAppLink('Hello, I want to book a service.');
 
@@ -70,9 +79,51 @@ export default function ChatPage() {
     initializeChat();
   }, []);
 
+  // Close emoji popover on outside click or Esc
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsEmojiOpen(false);
+    };
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (!isEmojiOpen) return;
+      const target = e.target as Node;
+      if (emojiButtonRef.current?.contains(target)) return;
+      if (emojiPopoverRef.current?.contains(target)) return;
+      setIsEmojiOpen(false);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('mousedown', onMouseDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('mousedown', onMouseDown);
+    };
+  }, [isEmojiOpen]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const insertEmojiAtCursor = (emoji: string) => {
+    const el = inputRef.current;
+    if (!el) {
+      setInput((prev) => prev + emoji);
+      return;
+    }
+
+    const start = el.selectionStart ?? input.length;
+    const end = el.selectionEnd ?? input.length;
+    const next = input.slice(0, start) + emoji + input.slice(end);
+    setInput(next);
+
+    // Keep cursor right after inserted emoji
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + emoji.length;
+      el.setSelectionRange(pos, pos);
+    });
+  };
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,25 +149,25 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
-      <div className="bg-white shadow-lg border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-800 shadow-lg border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href="/" className="text-gray-600 hover:text-gray-900 transition-colors">
+              <Link href="/" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
                 <ArrowLeft className="w-6 h-6" />
               </Link>
-              <span className="text-xl font-bold text-gray-900">Purity Family Services</span>
+              <span className="text-xl font-bold text-gray-900 dark:text-white">Purity Family Services</span>
             </div>
             <div className="flex items-center space-x-6">
-              <Link href="/" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
+              <Link href="/" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-sm font-medium transition-colors">
                 Home
               </Link>
-              <Link href="/#services" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
+              <Link href="/#services" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-sm font-medium transition-colors">
                 Services
               </Link>
-              <button className="bg-green-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-green-600 transition-all duration-200 shadow-md hover:shadow-lg">
+              <button className="bg-green-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-green-600 dark:hover:bg-green-400 transition-all duration-200 shadow-md hover:shadow-lg">
                 End Chat
               </button>
             </div>
@@ -126,39 +177,39 @@ export default function ChatPage() {
 
       {/* Chat Container */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
           {/* Chat Header */}
-          <div className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white p-6 flex items-center justify-between">
+          <div className="border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-700 p-6 flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-14 h-14 bg-teal-100 rounded-full flex items-center justify-center shadow-md">
-                <span className="text-teal-600 font-bold text-lg">PS</span>
+              <div className="w-14 h-14 bg-teal-100 dark:bg-teal-900/30 rounded-full flex items-center justify-center shadow-md">
+                <span className="text-teal-600 dark:text-teal-400 font-bold text-lg">PS</span>
               </div>
               <div>
-                <div className="font-bold text-lg text-gray-900">Purity Support Team</div>
-                <div className="text-sm text-gray-500 flex items-center gap-2">
+                <div className="font-bold text-lg text-gray-900 dark:text-white">Purity Support Team</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
                   <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                   Online & Ready to help
                 </div>
               </div>
             </div>
-            <button className="p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+            <button className="p-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
               <Phone className="w-6 h-6" />
             </button>
           </div>
 
           {/* Messages */}
-          <div className="h-[500px] overflow-y-auto p-6 space-y-6 bg-gray-50">
-            <div className="text-center text-gray-500 text-xs font-semibold py-3 border-t border-b border-gray-200 uppercase tracking-wider">
+          <div className="h-[500px] overflow-y-auto p-6 space-y-6 bg-gray-50 dark:bg-gray-900">
+            <div className="text-center text-gray-500 dark:text-gray-400 text-xs font-semibold py-3 border-t border-b border-gray-200 dark:border-gray-700 uppercase tracking-wider">
               TODAY
             </div>
 
             {messages.length === 0 && (
               <div className="text-center py-12">
-                <div className="bg-white rounded-xl p-6 inline-block shadow-md border border-gray-100 max-w-md">
-                  <p className="text-gray-700 text-lg leading-relaxed">
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-6 inline-block shadow-md border border-gray-100 dark:border-gray-700 max-w-md">
+                  <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed">
                     Hello! Welcome to Purity Family Services. How can we assist you with our home care or laundry services today?
                   </p>
-                  <p className="text-xs text-gray-500 mt-3 font-medium">10:24 AM</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 font-medium">10:24 AM</p>
                 </div>
               </div>
             )}
@@ -172,13 +223,13 @@ export default function ChatPage() {
                   className={`max-w-xs md:max-w-md rounded-2xl p-4 shadow-md ${
                     message.sender === 'customer'
                       ? 'bg-teal-600 text-white'
-                      : 'bg-white text-gray-900 border border-gray-200'
+                      : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
                   }`}
                 >
                   <p className="leading-relaxed">{message.content}</p>
                   <p
                     className={`text-xs mt-2 ${
-                      message.sender === 'customer' ? 'text-teal-100' : 'text-gray-500'
+                      message.sender === 'customer' ? 'text-teal-100' : 'text-gray-500 dark:text-gray-400'
                     }`}
                   >
                     {format(new Date(message.timestamp), 'h:mm a')}
@@ -189,11 +240,11 @@ export default function ChatPage() {
 
             {isTyping && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 rounded-lg p-3">
+                <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3">
                   <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
                   </div>
                 </div>
               </div>
@@ -204,12 +255,12 @@ export default function ChatPage() {
 
           {/* WhatsApp CTA */}
           {messages.length > 0 && (
-            <div className="border-t border-gray-200 p-6 bg-gradient-to-r from-green-50 to-white">
+            <div className="border-t border-gray-200 dark:border-gray-700 p-6 bg-gradient-to-r from-green-50 to-white dark:from-gray-800 dark:to-gray-700">
               <a
                 href={whatsappLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block w-full bg-green-500 text-white text-center py-4 rounded-xl font-semibold hover:bg-green-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center space-x-3"
+                className="block w-full bg-green-500 text-white text-center py-4 rounded-xl font-semibold hover:bg-green-600 dark:hover:bg-green-400 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center space-x-3"
               >
                 <MessageSquare className="w-6 h-6" />
                 <span>Continue on WhatsApp</span>
@@ -218,8 +269,8 @@ export default function ChatPage() {
           )}
 
           {/* Input */}
-          <form onSubmit={handleSend} className="border-t border-gray-200 p-6 bg-white flex items-center space-x-3">
-            <button type="button" className="p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+          <form onSubmit={handleSend} className="border-t border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800 flex items-center space-x-3">
+            <button type="button" className="p-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
               <span className="text-2xl">+</span>
             </button>
             <input
@@ -228,14 +279,46 @@ export default function ChatPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type your message..."
-              className="flex-1 border-2 border-gray-200 rounded-xl px-5 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-lg"
+              className="flex-1 border-2 border-gray-200 dark:border-gray-600 rounded-xl px-5 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-lg text-gray-900 dark:text-white dark:bg-gray-700 placeholder-gray-400 dark:placeholder-gray-500 cursor-text"
+              style={{ caretColor: '#14b8a6' }}
             />
-            <button type="button" className="p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-              <span className="text-2xl">😊</span>
-            </button>
+            <div className="relative">
+              <button
+                ref={emojiButtonRef}
+                type="button"
+                aria-label="Open emoji picker"
+                onClick={() => setIsEmojiOpen((v) => !v)}
+                className="p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <span className="text-2xl">😊</span>
+              </button>
+
+              {isEmojiOpen && (
+                <div
+                  ref={emojiPopoverRef}
+                  className="absolute bottom-14 right-0 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl rounded-xl p-3"
+                >
+                  <div className="grid grid-cols-8 gap-2">
+                    {EMOJIS.map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        className="h-8 w-8 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-lg"
+                        onClick={() => {
+                          insertEmojiAtCursor(emoji);
+                          setIsEmojiOpen(false);
+                        }}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <button
               type="submit"
-              className="bg-teal-600 text-white p-3 rounded-xl hover:bg-teal-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="bg-teal-600 text-white p-3 rounded-xl hover:bg-teal-700 dark:hover:bg-teal-500 transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               <Send className="w-6 h-6" />
             </button>
@@ -243,7 +326,7 @@ export default function ChatPage() {
         </div>
 
         {/* Footer Info */}
-        <div className="mt-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600">
+        <div className="mt-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600 dark:text-gray-400">
           <div className="flex items-center space-x-4 mb-4 md:mb-0">
             <div className="flex items-center space-x-2">
               <span>🛡️</span>
@@ -255,17 +338,17 @@ export default function ChatPage() {
             </div>
           </div>
           <div className="flex space-x-4">
-            <Link href="/privacy" className="hover:text-gray-900">
+            <Link href="/privacy" className="hover:text-gray-900 dark:hover:text-white">
               Privacy Policy
             </Link>
-            <Link href="/terms" className="hover:text-gray-900">
+            <Link href="/terms" className="hover:text-gray-900 dark:hover:text-white">
               Terms of Service
             </Link>
           </div>
         </div>
       </div>
 
-      <div className="text-center text-gray-500 text-sm py-4">
+      <div className="text-center text-gray-500 dark:text-gray-400 text-sm py-4">
         © 2024 Purity Family Services. All rights reserved.
       </div>
     </div>

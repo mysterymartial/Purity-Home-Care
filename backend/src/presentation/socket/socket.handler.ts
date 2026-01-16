@@ -26,6 +26,9 @@ export const setupSocketIO = (io: Server): void => {
 
         // Broadcast to all clients in the session room
         io.to(data.sessionId).emit('message', message);
+        
+        // Email notification is already handled in ChatSessionService.createMessage
+        // This ensures emails are sent even when messages come through Socket.IO
       } catch (error) {
         console.error('Error handling message:', error);
         socket.emit('error', { message: 'Failed to send message' });
@@ -43,4 +46,7 @@ export const setupSocketIO = (io: Server): void => {
     });
   });
 };
+
+
+
 

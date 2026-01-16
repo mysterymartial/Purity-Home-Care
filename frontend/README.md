@@ -20,7 +20,7 @@ Create `.env.local` file in the root directory:
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3001
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyAEcnXpBSA4MVlOnwsQroky64lgeU7ewxU
+NEXT_PUBLIC_FIREBASE_API_KEY=your-firebase-api-key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=purity-home-care.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=purity-home-care
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=purity-home-care.firebasestorage.app
@@ -198,6 +198,11 @@ The application is fully responsive:
 ## 📚 Related Documentation
 
 - [Main README](../README.md) - Project overview
+- [User Manual](../docs/USER_MANUAL.md) - Complete user guide for customers and admins
+- [Deployment Guide](../docs/DEPLOYMENT_GUIDE.md) - Domain setup and Railway deployment
 - [Setup Guide](../docs/SETUP_GUIDE.md) - Detailed setup instructions
 - [Architecture Documentation](../docs/ARCHITECTURE.md) - System architecture
+
+
+
 

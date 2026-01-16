@@ -3,6 +3,7 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 import { connectDatabase } from './config/database';
 import { initializeFirebase } from './config/firebase';
 import chatRoutes from './presentation/routes/chat.routes';
@@ -33,29 +34,46 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Initialize Firebase Admin
+console.log('🔄 Initializing Firebase Admin...');
 initializeFirebase();
 
 // Connect to MongoDB
-connectDatabase();
+console.log('🔄 Connecting to MongoDB Atlas...');
+connectDatabase()
+  .then(() => {
+    console.log('✅ MongoDB connection established');
+    
+    // Setup Socket.IO
+    setupSocketIO(io);
 
-// Setup Socket.IO
-setupSocketIO(io);
+    // Routes
+    app.use('/api/chat', chatRoutes);
+    app.use('/api/reviews', reviewRoutes);
+    app.use('/api/admin', adminRoutes);
 
-// Routes
-app.use('/api/chat', chatRoutes);
-app.use('/api/reviews', reviewRoutes);
-app.use('/api/admin', adminRoutes);
+    // Health check
+    app.get('/health', (req, res) => {
+      res.json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+        firebase: 'initialized'
+      });
+    });
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// Start server
-httpServer.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 Socket.IO server ready`);
-});
+    // Start server
+    httpServer.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📡 Socket.IO server ready`);
+      console.log(`✅ All services initialized successfully`);
+    });
+  })
+  .catch((error) => {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  });
 
 export { io };
+
+
 

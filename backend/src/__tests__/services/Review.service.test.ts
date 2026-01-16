@@ -1,16 +1,34 @@
+/// <reference types="jest" />
 import { ReviewService } from '../../services/Review.service';
 import { ReviewRepository } from '../../repositories/Review.repository';
 
-jest.mock('../../repositories/Review.repository');
+// Mock repository methods
+const mockCreate = jest.fn();
+const mockFindApproved = jest.fn();
+const mockFindAll = jest.fn();
+const mockApprove = jest.fn();
+const mockReject = jest.fn();
+
+jest.mock('../../repositories/Review.repository', () => {
+  return {
+    ReviewRepository: jest.fn().mockImplementation(() => {
+      return {
+        create: mockCreate,
+        findApproved: mockFindApproved,
+        findAll: mockFindAll,
+        approve: mockApprove,
+        reject: mockReject,
+      };
+    }),
+  };
+});
 
 describe('ReviewService', () => {
   let reviewService: ReviewService;
-  let mockReviewRepository: jest.Mocked<ReviewRepository>;
 
   beforeEach(() => {
     jest.clearAllMocks();
     reviewService = new ReviewService();
-    mockReviewRepository = ReviewRepository as jest.MockedClass<typeof ReviewRepository>;
   });
 
   describe('createReview', () => {
@@ -23,7 +41,7 @@ describe('ReviewService', () => {
         createdAt: new Date(),
       };
 
-      mockReviewRepository.prototype.create = jest.fn().mockResolvedValue(mockReview);
+      mockCreate.mockResolvedValue(mockReview);
 
       const result = await reviewService.createReview({ rating: 5, text: 'Great service!' });
 
@@ -51,7 +69,7 @@ describe('ReviewService', () => {
         createdAt: new Date(),
       };
 
-      mockReviewRepository.prototype.create = jest.fn().mockResolvedValue(mockReview);
+      mockCreate.mockResolvedValue(mockReview);
 
       const result = await reviewService.createReview({ rating: 1 });
 
@@ -66,7 +84,7 @@ describe('ReviewService', () => {
         createdAt: new Date(),
       };
 
-      mockReviewRepository.prototype.create = jest.fn().mockResolvedValue(mockReview);
+      mockCreate.mockResolvedValue(mockReview);
 
       const result = await reviewService.createReview({ rating: 5 });
 
@@ -81,7 +99,7 @@ describe('ReviewService', () => {
         createdAt: new Date(),
       };
 
-      mockReviewRepository.prototype.create = jest.fn().mockResolvedValue(mockReview);
+      mockCreate.mockResolvedValue(mockReview);
 
       const result = await reviewService.createReview({ rating: 4 });
 
@@ -98,7 +116,7 @@ describe('ReviewService', () => {
         createdAt: new Date(),
       };
 
-      mockReviewRepository.prototype.create = jest.fn().mockResolvedValue(mockReview);
+      mockCreate.mockResolvedValue(mockReview);
 
       const result = await reviewService.createReview({ rating: 5, text: longText });
 
@@ -114,7 +132,7 @@ describe('ReviewService', () => {
         createdAt: new Date(),
       };
 
-      mockReviewRepository.prototype.create = jest.fn().mockResolvedValue(mockReview);
+      mockCreate.mockResolvedValue(mockReview);
 
       const result = await reviewService.createReview({ rating: 3, text: '' });
 
@@ -141,18 +159,62 @@ describe('ReviewService', () => {
         },
       ];
 
-      mockReviewRepository.prototype.findApproved = jest.fn().mockResolvedValue(mockReviews);
+      mockFindApproved.mockResolvedValue(mockReviews);
 
       const result = await reviewService.getApprovedReviews();
 
       expect(result.length).toBe(2);
-      expect(result.every((r) => r.approved)).toBe(true);
+      expect(result.every((r: { approved: boolean }) => r.approved)).toBe(true);
     });
 
     it('should return empty array when no approved reviews', async () => {
-      mockReviewRepository.prototype.findApproved = jest.fn().mockResolvedValue([]);
+      mockFindApproved.mockResolvedValue([]);
 
       const result = await reviewService.getApprovedReviews();
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('getAllReviews', () => {
+    it('should return all reviews including unapproved', async () => {
+      const mockReviews = [
+        {
+          _id: '1',
+          rating: 5,
+          text: 'Great!',
+          approved: true,
+          createdAt: new Date(),
+        },
+        {
+          _id: '2',
+          rating: 4,
+          text: 'Good',
+          approved: false,
+          createdAt: new Date(),
+        },
+        {
+          _id: '3',
+          rating: 3,
+          text: 'Average',
+          approved: true,
+          createdAt: new Date(),
+        },
+      ];
+
+      mockFindAll.mockResolvedValue(mockReviews);
+
+      const result = await reviewService.getAllReviews();
+
+      expect(result.length).toBe(3);
+      expect(result.some((r: { approved: boolean }) => r.approved)).toBe(true);
+      expect(result.some((r: { approved: boolean }) => !r.approved)).toBe(true);
+    });
+
+    it('should return empty array when no reviews exist', async () => {
+      mockFindAll.mockResolvedValue([]);
+
+      const result = await reviewService.getAllReviews();
 
       expect(result).toEqual([]);
     });
@@ -169,7 +231,7 @@ describe('ReviewService', () => {
         createdAt: new Date(),
       };
 
-      mockReviewRepository.prototype.approve = jest.fn().mockResolvedValue(mockReview);
+      mockApprove.mockResolvedValue(mockReview);
 
       const result = await reviewService.approveReview(reviewId);
 
@@ -177,7 +239,7 @@ describe('ReviewService', () => {
     });
 
     it('should return null when review not found', async () => {
-      mockReviewRepository.prototype.approve = jest.fn().mockResolvedValue(null);
+      mockApprove.mockResolvedValue(null);
 
       const result = await reviewService.approveReview('invalid-id');
 
@@ -187,7 +249,7 @@ describe('ReviewService', () => {
 
   describe('rejectReview', () => {
     it('should reject review successfully', async () => {
-      mockReviewRepository.prototype.reject = jest.fn().mockResolvedValue(true);
+      mockReject.mockResolvedValue(true);
 
       const result = await reviewService.rejectReview('507f1f77bcf86cd799439011');
 
@@ -195,7 +257,7 @@ describe('ReviewService', () => {
     });
 
     it('should return false when review not found', async () => {
-      mockReviewRepository.prototype.reject = jest.fn().mockResolvedValue(false);
+      mockReject.mockResolvedValue(false);
 
       const result = await reviewService.rejectReview('invalid-id');
 
@@ -203,4 +265,3 @@ describe('ReviewService', () => {
     });
   });
 });
-

@@ -149,3 +149,36 @@ export const sendAdminMessage = async (
   return response.json();
 };
 
+// Notification Preferences API
+export interface NotificationPreferences {
+  emailNotifications: boolean;
+  newChatAlerts: boolean;
+  reviewAlerts: boolean;
+}
+
+export const getNotificationPreferences = async (token: string): Promise<NotificationPreferences> => {
+  const response = await fetch(`${API_URL}/api/admin/settings/notifications`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  if (!response.ok) throw new Error('Failed to fetch notification preferences');
+  return response.json();
+};
+
+export const updateNotificationPreferences = async (
+  preferences: Partial<NotificationPreferences>,
+  token: string
+): Promise<NotificationPreferences> => {
+  const response = await fetch(`${API_URL}/api/admin/settings/notifications`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(preferences),
+  });
+  if (!response.ok) throw new Error('Failed to update notification preferences');
+  return response.json();
+};
+

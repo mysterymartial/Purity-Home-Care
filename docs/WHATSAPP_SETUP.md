@@ -57,3 +57,6 @@ The number is automatically cleaned (removes +, spaces, parentheses) for the Wha
 
 Just add your logo image as `frontend/public/logo.jpeg` and set the environment variable, and everything will work!
 
+
+
+

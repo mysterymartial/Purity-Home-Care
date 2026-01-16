@@ -1,19 +1,33 @@
+/// <reference types="jest" />
 import { Request, Response } from 'express';
 import { ChatSessionController } from '../../presentation/controllers/ChatSession.controller';
 import { ChatSessionService } from '../../services/ChatSession.service';
 
-jest.mock('../../services/ChatSession.service');
+// Mock service methods
+const mockCreateSession = jest.fn();
+const mockCreateMessage = jest.fn();
+const mockUpdateStatus = jest.fn();
+
+jest.mock('../../services/ChatSession.service', () => {
+  return {
+    ChatSessionService: jest.fn().mockImplementation(() => {
+      return {
+        createSession: mockCreateSession,
+        createMessage: mockCreateMessage,
+        updateStatus: mockUpdateStatus,
+      };
+    }),
+  };
+});
 
 describe('ChatSessionController', () => {
   let controller: ChatSessionController;
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
-  let mockService: jest.Mocked<ChatSessionService>;
 
   beforeEach(() => {
     jest.clearAllMocks();
     controller = new ChatSessionController();
-    mockService = ChatSessionService as jest.MockedClass<typeof ChatSessionService>;
 
     mockRequest = {
       params: {},
@@ -36,7 +50,7 @@ describe('ChatSessionController', () => {
         updatedAt: '2024-01-01T00:00:00.000Z',
       };
 
-      mockService.prototype.createSession = jest.fn().mockResolvedValue(mockSession);
+      mockCreateSession.mockResolvedValue(mockSession);
 
       await controller.createSession(mockRequest as Request, mockResponse as Response);
 
@@ -45,7 +59,7 @@ describe('ChatSessionController', () => {
     });
 
     it('should handle service errors', async () => {
-      mockService.prototype.createSession = jest.fn().mockRejectedValue(new Error('Service error'));
+      mockCreateSession.mockRejectedValue(new Error('Service error'));
 
       await controller.createSession(mockRequest as Request, mockResponse as Response);
 
@@ -67,7 +81,7 @@ describe('ChatSessionController', () => {
         timestamp: '2024-01-01T00:00:00.000Z',
       };
 
-      mockService.prototype.createMessage = jest.fn().mockResolvedValue(mockMessage);
+      mockCreateMessage.mockResolvedValue(mockMessage);
 
       await controller.createMessage(mockRequest as Request, mockResponse as Response);
 
@@ -119,7 +133,7 @@ describe('ChatSessionController', () => {
         updatedAt: '2024-01-01T00:00:00.000Z',
       };
 
-      mockService.prototype.updateStatus = jest.fn().mockResolvedValue(mockSession);
+      mockUpdateStatus.mockResolvedValue(mockSession);
 
       await controller.updateStatus(mockRequest as Request, mockResponse as Response);
 
@@ -150,7 +164,7 @@ describe('ChatSessionController', () => {
       mockRequest.params = { sessionId: 'invalid-id' };
       mockRequest.body = { status: 'Confirmed' };
 
-      mockService.prototype.updateStatus = jest.fn().mockResolvedValue(null);
+      mockUpdateStatus.mockResolvedValue(null);
 
       await controller.updateStatus(mockRequest as Request, mockResponse as Response);
 
@@ -159,4 +173,6 @@ describe('ChatSessionController', () => {
     });
   });
 });
+
+
 

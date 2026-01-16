@@ -1,7 +1,8 @@
 import { Router } from 'express';
+import type { Router as ExpressRouter } from 'express';
 import { ChatSessionController } from '../controllers/ChatSession.controller';
 
-const router = Router();
+const router: ExpressRouter = Router();
 const chatSessionController = new ChatSessionController();
 
 // Create a new chat session
@@ -17,4 +18,6 @@ router.get('/sessions/:sessionId/messages', chatSessionController.getMessages);
 router.post('/sessions/:sessionId/messages', chatSessionController.createMessage);
 
 export default router;
+
+
 

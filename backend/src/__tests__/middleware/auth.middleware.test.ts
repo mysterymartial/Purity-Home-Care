@@ -1,16 +1,30 @@
-import { Request, Response, NextFunction } from 'express';
-import { authenticateAdmin } from '../../presentation/middleware/auth.middleware';
-import admin from 'firebase-admin';
+/// <reference types="jest" />
+import { Response, NextFunction } from 'express';
+import { authenticateAdmin, AuthRequest } from '../../presentation/middleware/auth.middleware';
 
-jest.mock('firebase-admin');
+// Create mock function at module level - this will be hoisted
+const mockVerifyIdToken = jest.fn();
+
+jest.mock('firebase-admin', () => {
+  // Use the mock function from outer scope
+  return {
+    __esModule: true,
+    default: {
+      auth: jest.fn(() => ({
+        verifyIdToken: mockVerifyIdToken,
+      })),
+    },
+  };
+});
 
 describe('authenticateAdmin Middleware', () => {
-  let mockRequest: Partial<Request>;
+  let mockRequest: Partial<AuthRequest>;
   let mockResponse: Partial<Response>;
   let mockNext: NextFunction;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockVerifyIdToken.mockClear();
 
     mockRequest = {
       headers: {},
@@ -34,9 +48,9 @@ describe('authenticateAdmin Middleware', () => {
       authorization: 'Bearer valid-token',
     };
 
-    (admin.auth().verifyIdToken as jest.Mock) = jest.fn().mockResolvedValue(mockDecodedToken);
+    mockVerifyIdToken.mockResolvedValue(mockDecodedToken);
 
-    await authenticateAdmin(mockRequest as Request, mockResponse as Response, mockNext);
+    await authenticateAdmin(mockRequest as AuthRequest, mockResponse as Response, mockNext);
 
     expect(mockNext).toHaveBeenCalled();
     expect(mockRequest.user).toEqual(mockDecodedToken);
@@ -45,7 +59,7 @@ describe('authenticateAdmin Middleware', () => {
   it('should reject request without token', async () => {
     mockRequest.headers = {};
 
-    await authenticateAdmin(mockRequest as Request, mockResponse as Response, mockNext);
+    await authenticateAdmin(mockRequest as AuthRequest, mockResponse as Response, mockNext);
 
     expect(mockResponse.status).toHaveBeenCalledWith(401);
     expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Unauthorized: No token provided' });
@@ -57,7 +71,7 @@ describe('authenticateAdmin Middleware', () => {
       authorization: 'InvalidFormat token',
     };
 
-    await authenticateAdmin(mockRequest as Request, mockResponse as Response, mockNext);
+    await authenticateAdmin(mockRequest as AuthRequest, mockResponse as Response, mockNext);
 
     expect(mockResponse.status).toHaveBeenCalledWith(401);
     expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Unauthorized: No token provided' });
@@ -68,9 +82,9 @@ describe('authenticateAdmin Middleware', () => {
       authorization: 'Bearer invalid-token',
     };
 
-    (admin.auth().verifyIdToken as jest.Mock) = jest.fn().mockRejectedValue(new Error('Invalid token'));
+    mockVerifyIdToken.mockRejectedValue(new Error('Invalid token'));
 
-    await authenticateAdmin(mockRequest as Request, mockResponse as Response, mockNext);
+    await authenticateAdmin(mockRequest as AuthRequest, mockResponse as Response, mockNext);
 
     expect(mockResponse.status).toHaveBeenCalledWith(401);
     expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Unauthorized: Invalid token' });
@@ -82,9 +96,8 @@ describe('authenticateAdmin Middleware', () => {
       authorization: 'Bearer ',
     };
 
-    await authenticateAdmin(mockRequest as Request, mockResponse as Response, mockNext);
+    await authenticateAdmin(mockRequest as AuthRequest, mockResponse as Response, mockNext);
 
     expect(mockResponse.status).toHaveBeenCalledWith(401);
   });
 });
-

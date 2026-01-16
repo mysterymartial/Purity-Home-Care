@@ -4,7 +4,15 @@ module.exports = {
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
   transform: {
-    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.ts$': ['ts-jest', {
+      tsconfig: {
+        esModuleInterop: true,
+        moduleResolution: 'node',
+        isolatedModules: false,
+        allowSyntheticDefaultImports: true,
+        types: ['jest', 'node'],
+      },
+    }],
   },
   collectCoverageFrom: [
     'src/**/*.ts',
@@ -15,5 +23,8 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
 };
+
+
 

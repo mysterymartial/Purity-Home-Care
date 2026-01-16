@@ -10,3 +10,6 @@ export const getWhatsAppLink = (message: string = 'Hello, I want to book a servi
   return `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
 };
 
+
+
+

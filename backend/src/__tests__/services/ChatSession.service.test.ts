@@ -1,21 +1,46 @@
+/// <reference types="jest" />
 import { ChatSessionService } from '../../services/ChatSession.service';
 import { ChatSessionRepository } from '../../repositories/ChatSession.repository';
 import { MessageRepository } from '../../repositories/Message.repository';
 
-// Mock repositories
-jest.mock('../../repositories/ChatSession.repository');
-jest.mock('../../repositories/Message.repository');
+// Mock repository methods
+const mockCreate = jest.fn();
+const mockFindById = jest.fn();
+const mockFindAll = jest.fn();
+const mockUpdateStatus = jest.fn();
+const mockMessageCreate = jest.fn();
+const mockFindBySessionId = jest.fn();
+
+jest.mock('../../repositories/ChatSession.repository', () => {
+  return {
+    ChatSessionRepository: jest.fn().mockImplementation(() => {
+      return {
+        create: mockCreate,
+        findById: mockFindById,
+        findAll: mockFindAll,
+        updateStatus: mockUpdateStatus,
+      };
+    }),
+  };
+});
+
+jest.mock('../../repositories/Message.repository', () => {
+  return {
+    MessageRepository: jest.fn().mockImplementation(() => {
+      return {
+        create: mockMessageCreate,
+        findBySessionId: mockFindBySessionId,
+      };
+    }),
+  };
+});
 
 describe('ChatSessionService', () => {
   let chatSessionService: ChatSessionService;
-  let mockChatSessionRepository: jest.Mocked<ChatSessionRepository>;
-  let mockMessageRepository: jest.Mocked<MessageRepository>;
 
   beforeEach(() => {
     jest.clearAllMocks();
     chatSessionService = new ChatSessionService();
-    mockChatSessionRepository = ChatSessionRepository as jest.MockedClass<typeof ChatSessionRepository>;
-    mockMessageRepository = MessageRepository as jest.MockedClass<typeof MessageRepository>;
   });
 
   describe('createSession', () => {
@@ -28,18 +53,18 @@ describe('ChatSessionService', () => {
         updatedAt: new Date(),
       };
 
-      mockChatSessionRepository.prototype.create = jest.fn().mockResolvedValue(mockSession);
+      mockCreate.mockResolvedValue(mockSession);
 
       const result = await chatSessionService.createSession();
 
       expect(result).toBeDefined();
       expect(result.customerId).toBeDefined();
       expect(result.status).toBe('Pending');
-      expect(mockChatSessionRepository.prototype.create).toHaveBeenCalled();
+      expect(mockCreate).toHaveBeenCalled();
     });
 
     it('should handle repository errors', async () => {
-      mockChatSessionRepository.prototype.create = jest.fn().mockRejectedValue(new Error('Database error'));
+      mockCreate.mockRejectedValue(new Error('Database error'));
 
       await expect(chatSessionService.createSession()).rejects.toThrow('Database error');
     });
@@ -55,7 +80,7 @@ describe('ChatSessionService', () => {
         updatedAt: new Date(),
       };
 
-      mockChatSessionRepository.prototype.findById = jest.fn().mockResolvedValue(mockSession);
+      mockFindById.mockResolvedValue(mockSession);
 
       const result = await chatSessionService.getSession('507f1f77bcf86cd799439011');
 
@@ -64,7 +89,7 @@ describe('ChatSessionService', () => {
     });
 
     it('should return null when session not found', async () => {
-      mockChatSessionRepository.prototype.findById = jest.fn().mockResolvedValue(null);
+      mockFindById.mockResolvedValue(null);
 
       const result = await chatSessionService.getSession('invalid-id');
 
@@ -72,7 +97,7 @@ describe('ChatSessionService', () => {
     });
 
     it('should handle empty string session ID', async () => {
-      mockChatSessionRepository.prototype.findById = jest.fn().mockResolvedValue(null);
+      mockFindById.mockResolvedValue(null);
 
       const result = await chatSessionService.getSession('');
 
@@ -99,8 +124,8 @@ describe('ChatSessionService', () => {
         timestamp: new Date(),
       };
 
-      mockChatSessionRepository.prototype.findById = jest.fn().mockResolvedValue(mockSession);
-      mockMessageRepository.prototype.create = jest.fn().mockResolvedValue(mockMessage);
+      mockFindById.mockResolvedValue(mockSession);
+      mockMessageCreate.mockResolvedValue(mockMessage);
 
       const result = await chatSessionService.createMessage(sessionId, {
         content: 'Hello',
@@ -113,7 +138,7 @@ describe('ChatSessionService', () => {
     });
 
     it('should throw error when session not found', async () => {
-      mockChatSessionRepository.prototype.findById = jest.fn().mockResolvedValue(null);
+      mockFindById.mockResolvedValue(null);
 
       await expect(
         chatSessionService.createMessage('invalid-id', {
@@ -133,8 +158,8 @@ describe('ChatSessionService', () => {
         updatedAt: new Date(),
       };
 
-      mockChatSessionRepository.prototype.findById = jest.fn().mockResolvedValue(mockSession);
-      mockMessageRepository.prototype.create = jest.fn().mockResolvedValue({
+      mockFindById.mockResolvedValue(mockSession);
+      mockMessageCreate.mockResolvedValue({
         _id: '507f1f77bcf86cd799439012',
         chatSessionId: sessionId,
         sender: 'customer' as const,
@@ -161,8 +186,8 @@ describe('ChatSessionService', () => {
         updatedAt: new Date(),
       };
 
-      mockChatSessionRepository.prototype.findById = jest.fn().mockResolvedValue(mockSession);
-      mockMessageRepository.prototype.create = jest.fn().mockResolvedValue({
+      mockFindById.mockResolvedValue(mockSession);
+      mockMessageCreate.mockResolvedValue({
         _id: '507f1f77bcf86cd799439012',
         chatSessionId: sessionId,
         sender: 'customer' as const,
@@ -190,7 +215,7 @@ describe('ChatSessionService', () => {
         updatedAt: new Date(),
       };
 
-      mockChatSessionRepository.prototype.updateStatus = jest.fn().mockResolvedValue(mockSession);
+      mockUpdateStatus.mockResolvedValue(mockSession);
 
       const result = await chatSessionService.updateStatus(sessionId, { status: 'Confirmed' });
 
@@ -207,7 +232,7 @@ describe('ChatSessionService', () => {
         updatedAt: new Date(),
       };
 
-      mockChatSessionRepository.prototype.updateStatus = jest.fn().mockResolvedValue(mockSession);
+      mockUpdateStatus.mockResolvedValue(mockSession);
 
       const result = await chatSessionService.updateStatus(sessionId, { status: 'Completed' });
 
@@ -215,7 +240,7 @@ describe('ChatSessionService', () => {
     });
 
     it('should return null when session not found', async () => {
-      mockChatSessionRepository.prototype.updateStatus = jest.fn().mockResolvedValue(null);
+      mockUpdateStatus.mockResolvedValue(null);
 
       const result = await chatSessionService.updateStatus('invalid-id', { status: 'Confirmed' });
 
@@ -225,7 +250,7 @@ describe('ChatSessionService', () => {
 
   describe('getMessages', () => {
     it('should return empty array when no messages', async () => {
-      mockMessageRepository.prototype.findBySessionId = jest.fn().mockResolvedValue([]);
+      mockFindBySessionId.mockResolvedValue([]);
 
       const result = await chatSessionService.getMessages('507f1f77bcf86cd799439011');
 
@@ -251,7 +276,7 @@ describe('ChatSessionService', () => {
         },
       ];
 
-      mockMessageRepository.prototype.findBySessionId = jest.fn().mockResolvedValue(mockMessages);
+      mockFindBySessionId.mockResolvedValue(mockMessages);
 
       const result = await chatSessionService.getMessages(sessionId);
 
@@ -261,4 +286,6 @@ describe('ChatSessionService', () => {
     });
   });
 });
+
+
 

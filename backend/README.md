@@ -24,11 +24,11 @@ Create `.env` file in the root directory:
 PORT=3001
 NODE_ENV=development
 
-MONGODB_URI=mongodb+srv://bolasax16_db_user:3LKI3pKnwiR2wQkE@cluster0.uepkcfr.mongodb.net/purity-home-care?retryWrites=true&w=majority&appName=Cluster0s
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database-name?retryWrites=true&w=majority
 
 FIREBASE_PROJECT_ID=purity-home-care
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDABhbFOYh0TSg/\nAT0wguVI3hfVa86YzLOpzRM2gTVIxvph2Mo+eVJb2fuHGRbonI2WiXsj/EoV+/s+\nMx2Nqv3effk8l1xwakx7CbPjvAKxigLEj/xKPLBPeqqg1UwHXxEI0qS48D+euAsn\nFXDbBuPuivlZiWbilwIyfCIo+R2nu8LKemWa25I+lwElz+xFej/gjm/bui+umxSl\nIJI9sg67oKEJfaR8pmEQtHHPsb1dZMd06HU+8Me2ryJ52cBGqV+EyEop1s2adkHW\nSor++ywpja2EjbcUkmmQGu5lpuY+GYiowcVCzKjPSBZHkKW84rFsROpsx13T4i7z\n7o1e2bZrAgMBAAECggEAEp3kgkLgMF+0pFsd5WtOCHZZJYdktHAQMR5hRk+uQfvh\n6tpGTVqcz1aUahYsID7hWUlt8gtehsAd19DD2j124dB2eVc2uUK3tIFjJT6lR4ou\nV4PwJ/sMoEAFH+peCyQ+i2DvYxYOd6MMmGxIkJZGmJTKX6cQcwJvTkQLryDr15w+\nCpm6vYuIGjHt6Map6WhxzvzHxW6IR2UlaXzrgyDL8jTf8xqkQKKt7sU6Gr43bntt\nU/TD7pT56JPZAgyXBZjPmezBI7ymEzbv7FA/+zodbT0DoLNUSmYUx1g8kJUEAGEP\nscedWi39vqHxfXwNoFwE/p0RhzClUgLrVDiySeTY5QKBgQD79st6HzZk871cBicZ\ng//o7MfoR4HYmX27dTjVahzXWHtkPUYNvgHZTp0p0Rhn0KfKjqGOUVJDRDWVsEK5\nVDEKilC3rljQJbdhpzjldlb37K3LDXff8ruILbJFt8mC8LYyaxNF1rw8OVU9Prau\n2JY39KF8TstyAVMTOjx+TcrtVwKBgQDDGYC0yLr7TX6hh48yk9PiMw4aKv0lDRfW\nGlRjVRP2A/4uz543Ans/8udAzBF7BM2mJSIgwFzzksOe75LHw47vCJhCPLpVNu0E\nMY9a3pIdNESmc0lKt4LF9Mi6lsSvtgUx4NpcugvY9mq/bsqtJmcvtAgSCS/lS7k0\nfCn7yK7/DQKBgQCEwRmgdIWSVyH0NIGxXe0d6nPBnLt7RhQLCs4xE8GybLpGrEoW\nv3/14QfJmpPDTxq5DMFuXMZ9Dpk1DzN4tjVImmvA+6lrshOW7iZ6MAnOgvNmwufg\nJOJN89W0CguwY+d7VRNIfsWa7ZJNvJdANHmhbdEPz+w9WxlMTijFW3OJ7QKBgDdG\nmnieBpv8sMwDJEcoKvgDjxNK6r38n6xBeXdLO4SQTQvmNuVPBqxvnaV2K9221q0k\nCC9PUQaRpmr5ZZTDi1OeE8Vwfzp1fWGayQrt1GgBzxF5yGIq7Bo56EU1QjSmVYJ0\nOmnbLFAkQMpMEZBNOR8C2uaBQ9irQ6XjJ+H2Ud5hAoGAGhNPi0TXSJMQk2cp0xdB\nStWhJFgKVZpey8h0dL7gVLJaQBeeQ9dNIULlHkG77WZB9jkog2b/PFHJKdDzmF8+\nK0RtKhFzwCTz8ha44icHrv5Y9KiOJs3zJp9MFOmKZNCh4JLaN4SmhgTwbID1orb0\nefSCHhvKs/VnS0bDei3T008=\n-----END PRIVATE KEY-----\n"
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk-fbsvc@purity-home-care.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYour private key here\n-----END PRIVATE KEY-----\n"
+FIREBASE_CLIENT_EMAIL=your-service-account@project.iam.gserviceaccount.com
 
 CORS_ORIGIN=http://localhost:3000
 ```
@@ -181,6 +181,8 @@ The backend follows a **layered architecture**:
 - `GET /api/admin/reviews` - Get all reviews
 - `PATCH /api/admin/reviews/:reviewId/approve` - Approve review
 - `DELETE /api/admin/reviews/:reviewId/reject` - Reject review
+- `GET /api/admin/settings/notifications` - Get notification preferences
+- `PATCH /api/admin/settings/notifications` - Update notification preferences
 
 ### Health Check
 - `GET /health` - Server health status
@@ -254,6 +256,11 @@ lsof -ti:3001 | xargs kill -9
 ## 📚 Related Documentation
 
 - [Main README](../README.md) - Project overview
+- [User Manual](../docs/USER_MANUAL.md) - Complete user guide for customers and admins
+- [Deployment Guide](../docs/DEPLOYMENT_GUIDE.md) - Domain setup and Railway deployment
 - [Setup Guide](../docs/SETUP_GUIDE.md) - Detailed setup instructions
 - [Architecture Documentation](../docs/ARCHITECTURE.md) - System architecture
+
+
+
 
