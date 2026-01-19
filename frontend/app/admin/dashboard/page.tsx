@@ -331,9 +331,14 @@ export default function AdminDashboard() {
       <div className={`w-64 flex flex-col ${isDark ? 'bg-gray-800 border-r border-gray-700' : 'bg-teal-900'} text-white`}>
         <div className={`p-6 border-b ${isDark ? 'border-gray-700' : 'border-teal-800'}`}>
           <div className="flex items-center space-x-2 mb-2">
-            <div className={`w-8 h-8 rounded ${isDark ? 'bg-gray-700' : 'bg-teal-700'}`}></div>
+            <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0">
+              <img
+                src="/logo.jpg"
+                alt="Purity Home Care Logo"
+                className="w-full h-full object-contain"
+              />
+            </div>
             <div>
-              <div className="font-bold">Purity</div>
               <div className={`text-xs ${isDark ? 'text-gray-300' : 'text-teal-300'}`}>ADMIN PANEL</div>
             </div>
           </div>
