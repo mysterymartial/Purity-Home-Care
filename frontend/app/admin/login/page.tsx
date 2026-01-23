@@ -49,23 +49,54 @@ export default function AdminLoginPage() {
       
       router.push('/admin/dashboard');
     } catch (err: any) {
-      // Handle specific Firebase errors gracefully
-      let errorMessage = 'Failed to sign in. Please try again.';
+      // Handle specific Firebase errors with clear, user-friendly messages
+      let errorMessage = 'Unable to sign in. Please check your credentials and try again.';
       
-      if (err.code === 'auth/user-not-found') {
-        errorMessage = 'No account found with this email address.';
-      } else if (err.code === 'auth/wrong-password') {
-        errorMessage = 'Incorrect password. Please try again.';
+      // Authentication errors
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+        errorMessage = 'Incorrect email or password. Please check your credentials and try again.';
+      } else if (err.code === 'auth/user-not-found') {
+        errorMessage = 'No account found with this email address. Please check your email and try again.';
       } else if (err.code === 'auth/invalid-email') {
-        errorMessage = 'Invalid email address format.';
+        errorMessage = 'Invalid email address format. Please enter a valid email address.';
       } else if (err.code === 'auth/user-disabled') {
-        errorMessage = 'This account has been disabled.';
+        errorMessage = 'This account has been disabled. Please contact support for assistance.';
       } else if (err.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many failed attempts. Please try again later.';
+        errorMessage = 'Too many failed login attempts. Please wait a few minutes and try again.';
       } else if (err.code === 'auth/network-request-failed') {
-        errorMessage = 'Network error. Please check your internet connection.';
+        errorMessage = 'Network connection error. Please check your internet connection and try again.';
+      } else if (err.code === 'auth/operation-not-allowed') {
+        errorMessage = 'Email/password sign-in is not enabled. Please contact support.';
+      } else if (err.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak. Please use a stronger password.';
+      } else if (err.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already registered. Please use a different email or sign in.';
+      } else if (err.code === 'auth/invalid-verification-code') {
+        errorMessage = 'Invalid verification code. Please try again.';
+      } else if (err.code === 'auth/invalid-verification-id') {
+        errorMessage = 'Verification session expired. Please try again.';
+      } else if (err.code === 'auth/missing-password') {
+        errorMessage = 'Password is required. Please enter your password.';
+      } else if (err.code === 'auth/quota-exceeded') {
+        errorMessage = 'Service temporarily unavailable. Please try again later.';
+      } else if (err.code === 'auth/app-deleted') {
+        errorMessage = 'Application configuration error. Please contact support.';
+      } else if (err.code === 'auth/app-not-authorized') {
+        errorMessage = 'Application not authorized. Please contact support.';
+      } else if (err.code === 'auth/argument-error') {
+        errorMessage = 'Invalid input. Please check your email and password format.';
+      } else if (err.code === 'auth/invalid-api-key') {
+        errorMessage = 'Configuration error. Please contact support.';
+      } else if (err.code === 'auth/invalid-user-token') {
+        errorMessage = 'Session expired. Please sign in again.';
+      } else if (err.code === 'auth/requires-recent-login') {
+        errorMessage = 'Security verification required. Please sign in again.';
+      } else if (err.message && err.message.includes('auth/')) {
+        // Catch any other Firebase auth errors
+        errorMessage = 'Authentication error. Please check your credentials and try again.';
       } else if (err.message) {
-        errorMessage = err.message;
+        // Generic error message for non-Firebase errors
+        errorMessage = 'Unable to sign in. Please try again.';
       }
       
       setError(errorMessage);

@@ -53,7 +53,7 @@ export default function ChatPage() {
         }
 
         // Connect to Socket.IO
-        const socketConnection = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001', {
+        const socketConnection = io(process.env.NEXT_PUBLIC_API_URL!, {
           query: { sessionId },
         });
 

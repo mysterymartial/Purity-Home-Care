@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, getAuthToken } from '@/lib/firebase';
 import {
   getAdminChatSessions,
   getMessages,
@@ -55,24 +55,42 @@ export default function AdminDashboard() {
   const [refreshIntervalId, setRefreshIntervalId] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setAuthenticated(true);
-        loadData();
-      } else {
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        if (user) {
+          setAuthenticated(true);
+          loadData();
+        } else {
+          router.push('/admin/login');
+        }
+        setLoading(false);
+      },
+      (error) => {
+        // Handle Firebase auth state errors
+        console.error('Firebase auth state error:', error);
+        setLoading(false);
+        // Redirect to login on auth errors
         router.push('/admin/login');
       }
-      setLoading(false);
-    });
+    );
 
     return () => unsubscribe();
   }, [router]);
 
   const loadData = async () => {
-    const token = await auth.currentUser?.getIdToken();
-    if (!token) return;
-
     try {
+      if (!auth.currentUser) {
+        router.push('/admin/login');
+        return;
+      }
+
+      const token = await auth.currentUser.getIdToken(true); // Force refresh token
+      if (!token) {
+        router.push('/admin/login');
+        return;
+      }
+
       if (activeTab === 'inbox') {
         const sessions = await getAdminChatSessions(token);
         setChatSessions(sessions);
@@ -80,8 +98,13 @@ export default function AdminDashboard() {
         const reviewsData = await getAdminReviews(token);
         setReviews(reviewsData);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load data:', error);
+      // Handle Firebase token errors
+      if (error?.code?.includes('auth/') || error?.code?.includes('auth')) {
+        // Token expired or invalid - redirect to login
+        router.push('/admin/login');
+      }
     }
   };
 
@@ -160,7 +183,7 @@ export default function AdminDashboard() {
       loadMessages();
       
       // Connect to Socket.IO for real-time updates
-      const socketConnection = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001', {
+      const socketConnection = io(process.env.NEXT_PUBLIC_API_URL!, {
         query: { sessionId: selectedSession._id },
       });
 

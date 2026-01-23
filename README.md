@@ -141,7 +141,7 @@ SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
 ADMIN_EMAIL=your-admin@email.com
 
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=https://giving-love-production-f201.up.railway.app
 ```
 
 **⚠️ IMPORTANT**: Replace all placeholder values with your actual credentials. Never commit `.env` or `.env.local` files to Git!

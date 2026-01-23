@@ -30,7 +30,7 @@ FIREBASE_PROJECT_ID=purity-home-care
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYour private key here\n-----END PRIVATE KEY-----\n"
 FIREBASE_CLIENT_EMAIL=your-service-account@project.iam.gserviceaccount.com
 
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=https://giving-love-production-f201.up.railway.app
 ```
 
 ### Development
