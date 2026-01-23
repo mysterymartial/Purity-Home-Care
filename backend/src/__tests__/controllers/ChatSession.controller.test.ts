@@ -2,11 +2,14 @@
 import { Request, Response } from 'express';
 import { ChatSessionController } from '../../presentation/controllers/ChatSession.controller';
 import { ChatSessionService } from '../../services/ChatSession.service';
+import { AuthRequest } from '../../presentation/middleware/auth.middleware';
 
 // Mock service methods
 const mockCreateSession = jest.fn();
 const mockCreateMessage = jest.fn();
 const mockUpdateStatus = jest.fn();
+const mockGetSession = jest.fn();
+const mockDeleteSession = jest.fn();
 
 jest.mock('../../services/ChatSession.service', () => {
   return {
@@ -15,6 +18,8 @@ jest.mock('../../services/ChatSession.service', () => {
         createSession: mockCreateSession,
         createMessage: mockCreateMessage,
         updateStatus: mockUpdateStatus,
+        getSession: mockGetSession,
+        deleteSession: mockDeleteSession,
       };
     }),
   };
@@ -170,6 +175,105 @@ describe('ChatSessionController', () => {
 
       expect(mockResponse.status).toHaveBeenCalledWith(404);
       expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Chat session not found' });
+    });
+  });
+
+  describe('deleteSession', () => {
+    let mockAuthRequest: Partial<AuthRequest>;
+
+    beforeEach(() => {
+      mockAuthRequest = {
+        params: {},
+        user: {
+          email: 'admin@example.com',
+          uid: 'test-uid',
+        } as any,
+      };
+    });
+
+    it('should delete session successfully', async () => {
+      const sessionId = '507f1f77bcf86cd799439011';
+      mockAuthRequest.params = { sessionId };
+
+      const mockSession = {
+        _id: sessionId,
+        customerId: 'test-uuid',
+        status: 'Pending' as const,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      };
+
+      mockGetSession.mockResolvedValue(mockSession);
+      mockDeleteSession.mockResolvedValue(true);
+
+      await controller.deleteSession(
+        mockAuthRequest as AuthRequest,
+        mockResponse as Response
+      );
+
+      expect(mockGetSession).toHaveBeenCalledWith(sessionId);
+      expect(mockDeleteSession).toHaveBeenCalledWith(sessionId, 'admin@example.com');
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Chat session deleted successfully',
+      });
+    });
+
+    it('should return 404 when session not found', async () => {
+      const sessionId = 'invalid-id';
+      mockAuthRequest.params = { sessionId };
+
+      mockGetSession.mockResolvedValue(null);
+      mockDeleteSession.mockResolvedValue(false);
+
+      await controller.deleteSession(
+        mockAuthRequest as AuthRequest,
+        mockResponse as Response
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(404);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        error: 'Chat session not found',
+      });
+    });
+
+    it('should handle deletion errors gracefully', async () => {
+      const sessionId = '507f1f77bcf86cd799439011';
+      mockAuthRequest.params = { sessionId };
+
+      const error = new Error('Database error');
+      mockGetSession.mockRejectedValue(error);
+
+      await controller.deleteSession(
+        mockAuthRequest as AuthRequest,
+        mockResponse as Response
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Database error' });
+    });
+
+    it('should use unknown email when user email is missing', async () => {
+      const sessionId = '507f1f77bcf86cd799439011';
+      mockAuthRequest.params = { sessionId };
+      mockAuthRequest.user = {} as any;
+
+      const mockSession = {
+        _id: sessionId,
+        customerId: 'test-uuid',
+        status: 'Pending' as const,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      };
+
+      mockGetSession.mockResolvedValue(mockSession);
+      mockDeleteSession.mockResolvedValue(true);
+
+      await controller.deleteSession(
+        mockAuthRequest as AuthRequest,
+        mockResponse as Response
+      );
+
+      expect(mockDeleteSession).toHaveBeenCalledWith(sessionId, 'unknown');
     });
   });
 });

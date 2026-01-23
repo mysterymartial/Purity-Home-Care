@@ -3,11 +3,19 @@ import { Request, Response } from 'express';
 import { SettingsController } from '../../presentation/controllers/Settings.controller';
 import { AuthRequest } from '../../presentation/middleware/auth.middleware';
 import { notificationPreferencesService } from '../../services/NotificationPreferences.service';
+import { globalSettingsService } from '../../services/GlobalSettings.service';
 
 jest.mock('../../services/NotificationPreferences.service', () => ({
   notificationPreferencesService: {
     getPreferences: jest.fn(),
     updatePreferences: jest.fn(),
+  },
+}));
+
+jest.mock('../../services/GlobalSettings.service', () => ({
+  globalSettingsService: {
+    getTheme: jest.fn(),
+    updateTheme: jest.fn(),
   },
 }));
 
@@ -159,6 +167,128 @@ describe('SettingsController', () => {
       });
 
       await settingsController.updateNotificationPreferences(
+        mockRequest as AuthRequest,
+        mockResponse as Response
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Update failed' });
+    });
+  });
+
+  describe('getGlobalTheme', () => {
+    it('should return global theme successfully', async () => {
+      (globalSettingsService.getTheme as jest.Mock).mockResolvedValue('dark');
+
+      await settingsController.getGlobalTheme(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+
+      expect(globalSettingsService.getTheme).toHaveBeenCalled();
+      expect(mockResponse.json).toHaveBeenCalledWith({ theme: 'dark' });
+    });
+
+    it('should return light theme by default', async () => {
+      (globalSettingsService.getTheme as jest.Mock).mockResolvedValue('light');
+
+      await settingsController.getGlobalTheme(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+
+      expect(mockResponse.json).toHaveBeenCalledWith({ theme: 'light' });
+    });
+
+    it('should handle errors gracefully', async () => {
+      const error = new Error('Database error');
+      (globalSettingsService.getTheme as jest.Mock).mockRejectedValue(error);
+
+      await settingsController.getGlobalTheme(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Database error' });
+    });
+  });
+
+  describe('updateGlobalTheme', () => {
+    it('should update theme to dark successfully', async () => {
+      mockRequest.body = { theme: 'dark' };
+      (globalSettingsService.updateTheme as jest.Mock).mockResolvedValue('dark');
+
+      await settingsController.updateGlobalTheme(
+        mockRequest as AuthRequest,
+        mockResponse as Response
+      );
+
+      expect(globalSettingsService.updateTheme).toHaveBeenCalledWith('dark');
+      expect(mockResponse.json).toHaveBeenCalledWith({ theme: 'dark' });
+    });
+
+    it('should update theme to light successfully', async () => {
+      mockRequest.body = { theme: 'light' };
+      (globalSettingsService.updateTheme as jest.Mock).mockResolvedValue('light');
+
+      await settingsController.updateGlobalTheme(
+        mockRequest as AuthRequest,
+        mockResponse as Response
+      );
+
+      expect(globalSettingsService.updateTheme).toHaveBeenCalledWith('light');
+      expect(mockResponse.json).toHaveBeenCalledWith({ theme: 'light' });
+    });
+
+    it('should update theme to auto successfully', async () => {
+      mockRequest.body = { theme: 'auto' };
+      (globalSettingsService.updateTheme as jest.Mock).mockResolvedValue('auto');
+
+      await settingsController.updateGlobalTheme(
+        mockRequest as AuthRequest,
+        mockResponse as Response
+      );
+
+      expect(globalSettingsService.updateTheme).toHaveBeenCalledWith('auto');
+      expect(mockResponse.json).toHaveBeenCalledWith({ theme: 'auto' });
+    });
+
+    it('should reject invalid theme value', async () => {
+      mockRequest.body = { theme: 'invalid' };
+
+      await settingsController.updateGlobalTheme(
+        mockRequest as AuthRequest,
+        mockResponse as Response
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        error: 'Invalid theme. Must be light, dark, or auto',
+      });
+      expect(globalSettingsService.updateTheme).not.toHaveBeenCalled();
+    });
+
+    it('should reject missing theme value', async () => {
+      mockRequest.body = {};
+
+      await settingsController.updateGlobalTheme(
+        mockRequest as AuthRequest,
+        mockResponse as Response
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        error: 'Invalid theme. Must be light, dark, or auto',
+      });
+    });
+
+    it('should handle errors gracefully', async () => {
+      mockRequest.body = { theme: 'dark' };
+      const error = new Error('Update failed');
+      (globalSettingsService.updateTheme as jest.Mock).mockRejectedValue(error);
+
+      await settingsController.updateGlobalTheme(
         mockRequest as AuthRequest,
         mockResponse as Response
       );

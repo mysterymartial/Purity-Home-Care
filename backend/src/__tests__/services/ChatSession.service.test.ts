@@ -8,8 +8,10 @@ const mockCreate = jest.fn();
 const mockFindById = jest.fn();
 const mockFindAll = jest.fn();
 const mockUpdateStatus = jest.fn();
+const mockSoftDelete = jest.fn();
 const mockMessageCreate = jest.fn();
 const mockFindBySessionId = jest.fn();
+const mockSoftDeleteBySessionId = jest.fn();
 
 jest.mock('../../repositories/ChatSession.repository', () => {
   return {
@@ -19,6 +21,7 @@ jest.mock('../../repositories/ChatSession.repository', () => {
         findById: mockFindById,
         findAll: mockFindAll,
         updateStatus: mockUpdateStatus,
+        softDelete: mockSoftDelete,
       };
     }),
   };
@@ -30,6 +33,7 @@ jest.mock('../../repositories/Message.repository', () => {
       return {
         create: mockMessageCreate,
         findBySessionId: mockFindBySessionId,
+        softDeleteBySessionId: mockSoftDeleteBySessionId,
       };
     }),
   };
@@ -283,6 +287,62 @@ describe('ChatSessionService', () => {
       expect(result.length).toBe(2);
       expect(result[0].content).toBe('Hello');
       expect(result[1].content).toBe('Hi there');
+    });
+  });
+
+  describe('deleteSession', () => {
+    it('should soft delete session and messages successfully', async () => {
+      const sessionId = '507f1f77bcf86cd799439011';
+      const deletedBy = 'admin@example.com';
+
+      mockSoftDeleteBySessionId.mockResolvedValue(undefined);
+      mockSoftDelete.mockResolvedValue(true);
+
+      const result = await chatSessionService.deleteSession(sessionId, deletedBy);
+
+      expect(mockSoftDeleteBySessionId).toHaveBeenCalledWith(sessionId);
+      expect(mockSoftDelete).toHaveBeenCalledWith(sessionId, deletedBy);
+      expect(result).toBe(true);
+    });
+
+    it('should return false when session not found', async () => {
+      const sessionId = 'invalid-id';
+      const deletedBy = 'admin@example.com';
+
+      mockSoftDeleteBySessionId.mockResolvedValue(undefined);
+      mockSoftDelete.mockResolvedValue(false);
+
+      const result = await chatSessionService.deleteSession(sessionId, deletedBy);
+
+      expect(result).toBe(false);
+    });
+
+    it('should soft delete messages before deleting session', async () => {
+      const sessionId = '507f1f77bcf86cd799439011';
+      const deletedBy = 'admin@example.com';
+
+      mockSoftDeleteBySessionId.mockResolvedValue(undefined);
+      mockSoftDelete.mockResolvedValue(true);
+
+      await chatSessionService.deleteSession(sessionId, deletedBy);
+
+      // Verify both methods were called
+      expect(mockSoftDeleteBySessionId).toHaveBeenCalledWith(sessionId);
+      expect(mockSoftDelete).toHaveBeenCalledWith(sessionId, deletedBy);
+      // Verify messages are deleted first (check call order)
+      expect(mockSoftDeleteBySessionId).toHaveBeenCalled();
+      expect(mockSoftDelete).toHaveBeenCalled();
+    });
+
+    it('should handle deletion errors', async () => {
+      const sessionId = '507f1f77bcf86cd799439011';
+      const deletedBy = 'admin@example.com';
+
+      mockSoftDeleteBySessionId.mockRejectedValue(new Error('Database error'));
+
+      await expect(
+        chatSessionService.deleteSession(sessionId, deletedBy)
+      ).rejects.toThrow('Database error');
     });
   });
 });
