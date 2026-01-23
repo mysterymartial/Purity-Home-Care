@@ -1059,7 +1059,12 @@ export default function AdminDashboard() {
                         </label>
                         <select
                           value={systemSettings.theme}
-                          onChange={(e) => setSystemSettings(prev => ({ ...prev, theme: e.target.value }))}
+                          onChange={(e) => {
+                            const themeValue = e.target.value as 'light' | 'dark' | 'auto';
+                            if (['light', 'dark', 'auto'].includes(themeValue)) {
+                              setSystemSettings(prev => ({ ...prev, theme: themeValue }));
+                            }
+                          }}
                           className={`w-full rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all ${
                             isDark 
                               ? 'bg-gray-700 border border-gray-600 text-white' 
