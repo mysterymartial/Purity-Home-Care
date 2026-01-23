@@ -262,7 +262,9 @@ export default function AdminDashboard() {
   };
 
   const handleLogout = async () => {
-    await signOut(auth);
+    if (auth) {
+      await signOut(auth);
+    }
     localStorage.removeItem('adminToken');
     router.push('/admin/login');
   };
