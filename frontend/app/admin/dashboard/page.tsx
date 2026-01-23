@@ -49,7 +49,11 @@ export default function AdminDashboard() {
     displayName: 'Admin User',
     email: auth?.currentUser?.email || '',
   });
-  const [systemSettings, setSystemSettings] = useState({
+  const [systemSettings, setSystemSettings] = useState<{
+    autoRefresh: boolean;
+    refreshInterval: number;
+    theme: 'light' | 'dark' | 'auto';
+  }>({
     autoRefresh: true,
     refreshInterval: 30, // seconds
     theme: 'light',
@@ -133,7 +137,15 @@ export default function AdminDashboard() {
       }
       if (savedSystemSettings) {
         const parsed = JSON.parse(savedSystemSettings);
-        setSystemSettings(parsed);
+        // Validate theme value when loading from localStorage
+        const validTheme = parsed.theme && ['light', 'dark', 'auto'].includes(parsed.theme) 
+          ? parsed.theme 
+          : 'light';
+        setSystemSettings({
+          autoRefresh: parsed.autoRefresh ?? true,
+          refreshInterval: parsed.refreshInterval ?? 30,
+          theme: validTheme as 'light' | 'dark' | 'auto',
+        });
       }
       
       // Set email from auth
