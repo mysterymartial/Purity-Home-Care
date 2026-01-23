@@ -3,6 +3,8 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IChatSession extends Document {
   customerId: string;
   status: 'Pending' | 'Confirmed' | 'Completed';
+  deletedAt?: Date;
+  deletedBy?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,6 +21,15 @@ const ChatSessionSchema = new Schema<IChatSession>(
       type: String,
       enum: ['Pending', 'Confirmed', 'Completed'],
       default: 'Pending',
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+    deletedBy: {
+      type: String,
+      default: null,
     },
   },
   {

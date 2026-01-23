@@ -154,6 +154,19 @@ export const sendAdminMessage = async (
   return response.json();
 };
 
+export const deleteChatSession = async (
+  sessionId: string,
+  token: string
+): Promise<void> => {
+  const response = await fetch(`${API_URL}/api/admin/chat/sessions/${sessionId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  if (!response.ok) throw new Error('Failed to delete chat session');
+};
+
 // Notification Preferences API
 export interface NotificationPreferences {
   emailNotifications: boolean;
@@ -184,6 +197,29 @@ export const updateNotificationPreferences = async (
     body: JSON.stringify(preferences),
   });
   if (!response.ok) throw new Error('Failed to update notification preferences');
+  return response.json();
+};
+
+// Global Theme API (public - no auth required)
+export const getGlobalTheme = async (): Promise<{ theme: 'light' | 'dark' | 'auto' }> => {
+  const response = await fetch(`${API_URL}/api/settings/theme`);
+  if (!response.ok) throw new Error('Failed to fetch global theme');
+  return response.json();
+};
+
+export const updateGlobalTheme = async (
+  theme: 'light' | 'dark' | 'auto',
+  token: string
+): Promise<{ theme: 'light' | 'dark' | 'auto' }> => {
+  const response = await fetch(`${API_URL}/api/admin/settings/theme`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ theme }),
+  });
+  if (!response.ok) throw new Error('Failed to update global theme');
   return response.json();
 };
 

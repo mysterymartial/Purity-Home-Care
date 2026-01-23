@@ -13,15 +13,18 @@ import {
   approveReview,
   rejectReview,
   sendAdminMessage,
+  deleteChatSession,
   getNotificationPreferences,
   updateNotificationPreferences,
+  getGlobalTheme,
+  updateGlobalTheme,
   ChatSession,
   Message,
   Review,
 } from '@/lib/api';
 import { io, Socket } from 'socket.io-client';
 import { format } from 'date-fns';
-import { MessageSquare, Star, Settings, LogOut, Bell, Search, Video, Check, X, User, Mail, Save, Globe, Clock } from 'lucide-react';
+import { MessageSquare, Star, Settings, LogOut, Bell, Search, Video, Check, X, User, Mail, Save, Globe, Clock, Trash2 } from 'lucide-react';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -138,6 +141,16 @@ export default function AdminDashboard() {
         setProfileSettings(prev => ({ ...prev, email: auth?.currentUser?.email || '' }));
       }
       
+      // Load global theme from backend
+      const loadGlobalTheme = async () => {
+        try {
+          const { theme } = await getGlobalTheme();
+          setSystemSettings(prev => ({ ...prev, theme }));
+        } catch (error) {
+          console.error('Failed to load global theme:', error);
+        }
+      };
+      
       // Load notification preferences from API
       const loadNotificationPreferences = async () => {
         const token = await auth?.currentUser?.getIdToken();
@@ -158,6 +171,7 @@ export default function AdminDashboard() {
         }
       };
       
+      loadGlobalTheme();
       loadNotificationPreferences();
     }
   }, [activeTab, authenticated]);
@@ -261,6 +275,39 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteChat = async () => {
+    if (!selectedSession) return;
+    
+    const confirmed = window.confirm(
+      `Are you sure you want to delete this chat session? This action cannot be undone and will delete all messages associated with this chat.`
+    );
+    
+    if (!confirmed) return;
+
+    const token = await auth?.currentUser?.getIdToken();
+    if (!token) return;
+
+    try {
+      await deleteChatSession(selectedSession._id, token);
+      
+      // Remove from UI
+      setChatSessions((prev) => prev.filter((s) => s._id !== selectedSession._id));
+      setSelectedSession(null);
+      setSessionMessages([]);
+      
+      // Disconnect socket if connected
+      if (socket) {
+        socket.disconnect();
+        setSocket(null);
+      }
+      
+      alert('Chat session deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete chat session:', error);
+      alert('Failed to delete chat session. Please try again.');
+    }
+  };
+
   const handleLogout = async () => {
     if (auth) {
       await signOut(auth);
@@ -282,18 +329,23 @@ export default function AdminDashboard() {
       const updatedPreferences = await updateNotificationPreferences(notificationSettings, token);
       setNotificationSettings(updatedPreferences);
       
-      // Also save to localStorage as backup
+      // Save global theme to backend (affects all users)
+      const { theme: updatedTheme } = await updateGlobalTheme(systemSettings.theme, token);
+      setSystemSettings(prev => ({ ...prev, theme: updatedTheme }));
+      
+      // Also save to localStorage as backup (except theme - that's global now)
       localStorage.setItem('adminNotificationSettings', JSON.stringify(updatedPreferences));
       localStorage.setItem('adminProfileSettings', JSON.stringify(profileSettings));
-      localStorage.setItem('adminSystemSettings', JSON.stringify(systemSettings));
+      const { theme, ...otherSystemSettings } = systemSettings;
+      localStorage.setItem('adminSystemSettings', JSON.stringify(otherSystemSettings));
       
       // Show success message
       alert('Settings saved successfully!');
       
-      // Apply theme immediately if changed
-      if (systemSettings.theme === 'dark') {
+      // Apply theme immediately if changed (global change)
+      if (updatedTheme === 'dark') {
         document.documentElement.classList.add('dark');
-      } else if (systemSettings.theme === 'light') {
+      } else if (updatedTheme === 'light') {
         document.documentElement.classList.remove('dark');
       } else {
         // Auto mode - check system preference
@@ -617,6 +669,14 @@ export default function AdminDashboard() {
                       <Video className="w-4 h-4" />
                       <span>Create Google Meet</span>
                     </a>
+                    <button
+                      onClick={handleDeleteChat}
+                      className={`bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700 dark:hover:bg-red-500 transition flex items-center space-x-2`}
+                      title="Delete this chat session"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete</span>
+                    </button>
                   </div>
                 </div>
 

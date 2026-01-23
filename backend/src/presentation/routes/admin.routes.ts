@@ -18,6 +18,7 @@ router.get('/chat/sessions', chatSessionController.getAllSessions);
 router.get('/chat/sessions/:sessionId/messages', chatSessionController.getMessages);
 router.post('/chat/sessions/:sessionId/messages', chatSessionController.createAdminMessage);
 router.patch('/chat/sessions/:sessionId/status', chatSessionController.updateStatus);
+router.delete('/chat/sessions/:sessionId', chatSessionController.deleteSession);
 
 // Review management
 router.get('/reviews', reviewController.getAllReviews);
@@ -27,6 +28,8 @@ router.delete('/reviews/:reviewId/reject', reviewController.rejectReview);
 // Settings management
 router.get('/settings/notifications', settingsController.getNotificationPreferences);
 router.patch('/settings/notifications', settingsController.updateNotificationPreferences);
+router.get('/settings/theme', settingsController.getGlobalTheme);
+router.patch('/settings/theme', settingsController.updateGlobalTheme);
 
 export default router;
 

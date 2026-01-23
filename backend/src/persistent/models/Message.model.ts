@@ -5,6 +5,9 @@ export interface IMessage extends Document {
   sender: 'customer' | 'admin';
   content: string;
   timestamp: Date;
+  deletedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const MessageSchema = new Schema<IMessage>(
@@ -27,6 +30,11 @@ const MessageSchema = new Schema<IMessage>(
     timestamp: {
       type: Date,
       default: Date.now,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+      index: true,
     },
   },
   {

@@ -80,6 +80,15 @@ export class ChatSessionService {
     return messages.map((m) => this.messageToResponseDTO(m));
   }
 
+  async deleteSession(sessionId: string, deletedBy: string): Promise<boolean> {
+    // First soft delete all messages associated with this session
+    await this.messageRepository.softDeleteBySessionId(sessionId);
+    
+    // Then soft delete the session itself
+    const deleted = await this.chatSessionRepository.softDelete(sessionId, deletedBy);
+    return deleted;
+  }
+
   private toResponseDTO(session: any): ChatSessionResponseDTO {
     return {
       _id: session._id.toString(),

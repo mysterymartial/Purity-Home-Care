@@ -9,6 +9,7 @@ import { initializeFirebase } from './config/firebase';
 import chatRoutes from './presentation/routes/chat.routes';
 import reviewRoutes from './presentation/routes/review.routes';
 import adminRoutes from './presentation/routes/admin.routes';
+import { SettingsController } from './presentation/controllers/Settings.controller';
 import { setupSocketIO } from './presentation/socket/socket.handler';
 
 // Load environment variables
@@ -50,6 +51,10 @@ connectDatabase()
     app.use('/api/chat', chatRoutes);
     app.use('/api/reviews', reviewRoutes);
     app.use('/api/admin', adminRoutes);
+    
+    // Public route for global theme (no auth required)
+    const settingsController = new SettingsController();
+    app.get('/api/settings/theme', settingsController.getGlobalTheme);
 
     // Health check
     app.get('/health', (req, res) => {

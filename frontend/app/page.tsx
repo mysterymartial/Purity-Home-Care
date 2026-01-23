@@ -266,25 +266,29 @@ export default function Home() {
                 step: '1',
                 title: 'Consultation',
                 description: 'We assess needs, discuss preferences, and understand your family\'s unique situation.',
+                gradient: 'from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800',
               },
               {
                 step: '2',
                 title: 'Care Plan',
                 description: 'A customized care plan is created with specific goals, schedules, and medical considerations.',
+                gradient: 'from-purple-600 to-purple-700 dark:from-purple-700 dark:to-purple-800',
               },
               {
                 step: '3',
                 title: 'Caregiver Match',
                 description: 'We carefully select and match a qualified caregiver aligned with your needs and values.',
+                gradient: 'from-teal-600 to-teal-700 dark:from-teal-700 dark:to-teal-800',
               },
               {
                 step: '4',
                 title: 'Ongoing Support',
                 description: 'Regular check-ins, adjustments, and coordination with healthcare providers ensure quality care.',
+                gradient: 'from-green-600 to-green-700 dark:from-green-700 dark:to-green-800',
               },
             ].map((item) => (
               <div key={item.step} className="text-center group">
-                <div className="w-20 h-20 bg-gradient-to-br from-teal-600 to-teal-700 dark:from-teal-700 dark:to-teal-800 text-white rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6 shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300">
+                <div className={`w-20 h-20 bg-gradient-to-br ${item.gradient} text-white rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6 shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300`}>
                   {item.step}
                 </div>
                 <h3 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">{item.title}</h3>

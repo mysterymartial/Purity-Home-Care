@@ -11,17 +11,24 @@ export class MessageRepository {
   async findBySessionId(sessionId: string): Promise<IMessage[]> {
     return await MessageModel.find({
       chatSessionId: new mongoose.Types.ObjectId(sessionId),
+      deletedAt: null,
     }).sort({ timestamp: 1 });
   }
 
   async findById(id: string): Promise<IMessage | null> {
-    return await MessageModel.findById(id);
+    return await MessageModel.findOne({ _id: id, deletedAt: null });
   }
 
-  async deleteBySessionId(sessionId: string): Promise<void> {
-    await MessageModel.deleteMany({
-      chatSessionId: new mongoose.Types.ObjectId(sessionId),
-    });
+  async softDeleteBySessionId(sessionId: string): Promise<void> {
+    await MessageModel.updateMany(
+      {
+        chatSessionId: new mongoose.Types.ObjectId(sessionId),
+        deletedAt: null,
+      },
+      {
+        deletedAt: new Date(),
+      }
+    );
   }
 }
 

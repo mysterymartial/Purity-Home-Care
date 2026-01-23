@@ -8,30 +8,37 @@ export class ChatSessionRepository {
   }
 
   async findById(id: string): Promise<IChatSession | null> {
-    return await ChatSessionModel.findById(id);
+    return await ChatSessionModel.findOne({ _id: id, deletedAt: null });
   }
 
   async findByCustomerId(customerId: string): Promise<IChatSession | null> {
-    return await ChatSessionModel.findOne({ customerId });
+    return await ChatSessionModel.findOne({ customerId, deletedAt: null });
   }
 
   async findAll(): Promise<IChatSession[]> {
-    return await ChatSessionModel.find().sort({ updatedAt: -1 });
+    return await ChatSessionModel.find({ deletedAt: null }).sort({ updatedAt: -1 });
   }
 
   async updateStatus(
     id: string,
     data: UpdateChatSessionStatusDTO
   ): Promise<IChatSession | null> {
-    return await ChatSessionModel.findByIdAndUpdate(
-      id,
+    return await ChatSessionModel.findOneAndUpdate(
+      { _id: id, deletedAt: null },
       { status: data.status },
       { new: true }
     );
   }
 
-  async delete(id: string): Promise<boolean> {
-    const result = await ChatSessionModel.findByIdAndDelete(id);
+  async softDelete(id: string, deletedBy: string): Promise<boolean> {
+    const result = await ChatSessionModel.findOneAndUpdate(
+      { _id: id, deletedAt: null },
+      { 
+        deletedAt: new Date(),
+        deletedBy: deletedBy
+      },
+      { new: true }
+    );
     return !!result;
   }
 }
