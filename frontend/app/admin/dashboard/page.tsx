@@ -44,7 +44,7 @@ export default function AdminDashboard() {
   });
   const [profileSettings, setProfileSettings] = useState({
     displayName: 'Admin User',
-    email: auth.currentUser?.email || '',
+    email: auth?.currentUser?.email || '',
   });
   const [systemSettings, setSystemSettings] = useState({
     autoRefresh: true,
@@ -86,7 +86,7 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     try {
-      if (!auth.currentUser) {
+      if (!auth || !auth.currentUser) {
         router.push('/admin/login');
         return;
       }
@@ -134,13 +134,13 @@ export default function AdminDashboard() {
       }
       
       // Set email from auth
-      if (auth.currentUser?.email) {
-        setProfileSettings(prev => ({ ...prev, email: auth.currentUser?.email || '' }));
+      if (auth?.currentUser?.email) {
+        setProfileSettings(prev => ({ ...prev, email: auth?.currentUser?.email || '' }));
       }
       
       // Load notification preferences from API
       const loadNotificationPreferences = async () => {
-        const token = await auth.currentUser?.getIdToken();
+        const token = await auth?.currentUser?.getIdToken();
         if (!token) return;
         
         try {
@@ -223,7 +223,7 @@ export default function AdminDashboard() {
 
   const handleStatusChange = async (status: 'Pending' | 'Confirmed' | 'Completed') => {
     if (!selectedSession) return;
-    const token = await auth.currentUser?.getIdToken();
+    const token = await auth?.currentUser?.getIdToken();
     if (!token) return;
 
     try {
@@ -238,7 +238,7 @@ export default function AdminDashboard() {
   };
 
   const handleApproveReview = async (reviewId: string) => {
-    const token = await auth.currentUser?.getIdToken();
+    const token = await auth?.currentUser?.getIdToken();
     if (!token) return;
 
     try {
@@ -250,7 +250,7 @@ export default function AdminDashboard() {
   };
 
   const handleRejectReview = async (reviewId: string) => {
-    const token = await auth.currentUser?.getIdToken();
+    const token = await auth?.currentUser?.getIdToken();
     if (!token) return;
 
     try {
@@ -269,7 +269,7 @@ export default function AdminDashboard() {
 
   const handleSaveSettings = async () => {
     setSettingsSaving(true);
-    const token = await auth.currentUser?.getIdToken();
+    const token = await auth?.currentUser?.getIdToken();
     if (!token) {
       setSettingsSaving(false);
       return;
@@ -434,7 +434,7 @@ export default function AdminDashboard() {
             </div>
             <div className="flex-1">
               <div className="text-sm font-semibold">{profileSettings.displayName || 'Admin User'}</div>
-              <div className={`text-xs ${isDark ? 'text-gray-300' : 'text-teal-300'}`}>{auth.currentUser?.email}</div>
+              <div className={`text-xs ${isDark ? 'text-gray-300' : 'text-teal-300'}`}>{auth?.currentUser?.email}</div>
             </div>
           </div>
           <button
@@ -662,7 +662,7 @@ export default function AdminDashboard() {
                       e.preventDefault();
                       if (!messageInput.trim() || !selectedSession) return;
 
-                      const token = await auth.currentUser?.getIdToken();
+                      const token = await auth?.currentUser?.getIdToken();
                       if (!token) return;
 
                       try {
