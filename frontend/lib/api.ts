@@ -1,4 +1,9 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+
+// Validate API URL is set
+if (!API_URL && typeof window !== 'undefined') {
+  console.error('NEXT_PUBLIC_API_URL is not set. API calls will fail.');
+}
 
 export interface ChatSession {
   _id: string;

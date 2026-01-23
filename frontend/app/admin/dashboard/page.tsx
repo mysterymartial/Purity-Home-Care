@@ -55,6 +55,12 @@ export default function AdminDashboard() {
   const [refreshIntervalId, setRefreshIntervalId] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    if (!auth) {
+      router.push('/admin/login');
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
@@ -183,7 +189,13 @@ export default function AdminDashboard() {
       loadMessages();
       
       // Connect to Socket.IO for real-time updates
-      const socketConnection = io(process.env.NEXT_PUBLIC_API_URL!, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) {
+        console.error('NEXT_PUBLIC_API_URL is not set. Socket.IO connection will fail.');
+        return;
+      }
+
+      const socketConnection = io(apiUrl, {
         query: { sessionId: selectedSession._id },
       });
 

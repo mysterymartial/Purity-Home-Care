@@ -6,6 +6,11 @@ import Link from 'next/link';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
+// Check if Firebase is initialized
+if (!auth) {
+  console.error('Firebase is not initialized. Please check your environment variables.');
+}
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -40,6 +45,12 @@ export default function AdminLoginPage() {
     }
 
     try {
+      if (!auth) {
+        setError('Firebase is not configured. Please contact support.');
+        setLoading(false);
+        return;
+      }
+
       const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
       const token = await userCredential.user.getIdToken();
       

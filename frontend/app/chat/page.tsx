@@ -53,7 +53,13 @@ export default function ChatPage() {
         }
 
         // Connect to Socket.IO
-        const socketConnection = io(process.env.NEXT_PUBLIC_API_URL!, {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        if (!apiUrl) {
+          console.error('NEXT_PUBLIC_API_URL is not set. Socket.IO connection will fail.');
+          return;
+        }
+
+        const socketConnection = io(apiUrl, {
           query: { sessionId },
         });
 

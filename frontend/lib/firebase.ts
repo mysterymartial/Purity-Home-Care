@@ -10,7 +10,7 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Validate Firebase configuration
+// Validate Firebase configuration (non-blocking, logs warning only)
 const validateFirebaseConfig = () => {
   const requiredFields = [
     'NEXT_PUBLIC_FIREBASE_API_KEY',
@@ -26,26 +26,43 @@ const validateFirebaseConfig = () => {
   );
 
   if (missingFields.length > 0) {
-    console.error('Firebase configuration error: Missing environment variables:', missingFields);
-    throw new Error('Firebase is not properly configured. Please check your environment variables.');
+    console.warn('Firebase configuration warning: Missing environment variables:', missingFields);
+    // Don't throw - allow app to load, Firebase will fail gracefully when used
   }
 };
 
 // Initialize Firebase
-let app: FirebaseApp;
+let app: FirebaseApp | null = null;
 if (!getApps().length) {
   try {
     validateFirebaseConfig();
-    app = initializeApp(firebaseConfig);
+    // Only initialize if we have the minimum required config
+    if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+      app = initializeApp(firebaseConfig);
+    } else {
+      console.warn('Firebase not initialized: Missing required configuration');
+    }
   } catch (error) {
     console.error('Firebase initialization error:', error);
-    throw error;
+    // Don't throw - allow app to continue without Firebase
+    app = null;
   }
 } else {
   app = getApps()[0];
 }
 
-export const auth = getAuth(app);
+// Create auth instance only if app is initialized
+let authInstance: Auth | null = null;
+try {
+  if (app) {
+    authInstance = getAuth(app);
+  }
+} catch (error) {
+  console.error('Failed to initialize Firebase Auth:', error);
+  authInstance = null;
+}
+
+export const auth = authInstance;
 
 /**
  * Safely get Firebase ID token with error handling
@@ -54,7 +71,7 @@ export const auth = getAuth(app);
  */
 export const getAuthToken = async (forceRefresh: boolean = false): Promise<string | null> => {
   try {
-    if (!auth.currentUser) {
+    if (!auth || !auth.currentUser) {
       return null;
     }
     const token = await auth.currentUser.getIdToken(forceRefresh);
@@ -66,7 +83,9 @@ export const getAuthToken = async (forceRefresh: boolean = false): Promise<strin
         error?.code === 'auth/invalid-user-token' ||
         error?.code === 'auth/user-disabled') {
       // Token expired or user disabled - sign out
-      await auth.signOut();
+      if (auth) {
+        await auth.signOut();
+      }
     }
     return null;
   }
