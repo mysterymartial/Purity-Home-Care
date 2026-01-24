@@ -3,6 +3,15 @@ import { ChatSessionService } from '../../services/ChatSession.service';
 import { CreateMessageDTO } from '../../dto/Message.dto';
 import { AuthRequest } from '../middleware/auth.middleware';
 
+// Lazy import to avoid circular dependency
+const getIO = () => {
+  try {
+    return require('../../index').io;
+  } catch {
+    return null;
+  }
+};
+
 export class ChatSessionController {
   private chatSessionService: ChatSessionService;
 
@@ -83,6 +92,13 @@ export class ChatSessionController {
       };
 
       const message = await this.chatSessionService.createMessage(sessionId, messageData);
+      
+      // Broadcast message via Socket.IO if available
+      const io = getIO();
+      if (io) {
+        io.to(sessionId).emit('message', message);
+      }
+      
       res.status(201).json(message);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -115,6 +131,13 @@ export class ChatSessionController {
       };
 
       const message = await this.chatSessionService.createMessage(sessionId, messageData);
+      
+      // Broadcast message via Socket.IO if available
+      const io = getIO();
+      if (io) {
+        io.to(sessionId).emit('message', message);
+      }
+      
       res.status(201).json(message);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

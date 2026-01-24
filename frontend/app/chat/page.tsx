@@ -64,7 +64,13 @@ export default function ChatPage() {
         });
 
         socketConnection.on('message', (message: Message) => {
-          setMessages((prev) => [...prev, message]);
+          setMessages((prev) => {
+            // Prevent duplicate messages by checking if message already exists
+            if (prev.some(m => m._id === message._id)) {
+              return prev;
+            }
+            return [...prev, message];
+          });
         });
 
         socketConnection.on('typing', () => {
@@ -139,18 +145,12 @@ export default function ChatPage() {
     setInput('');
 
     try {
-      const newMessage = await sendMessage(session._id, content);
-      setMessages((prev) => [...prev, newMessage]);
-      
-      if (socket) {
-        socket.emit('message', {
-          sessionId: session._id,
-          content,
-          sender: 'customer',
-        });
-      }
+      // Only use API call - Socket.IO listener will handle adding to state
+      await sendMessage(session._id, content);
+      // Don't manually add to state or emit via socket - let Socket.IO handle it
     } catch (error) {
       console.error('Failed to send message:', error);
+      setInput(content); // Restore input on error
     }
   };
 

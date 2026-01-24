@@ -188,12 +188,24 @@ After logging in, you'll see the main dashboard with:
 #### Creating Google Meet
 - Click **"Create Google Meet"** button next to the status dropdown
 - Opens Google Meet in a new tab
-- Share the meeting link with the customer
+- Copy the meeting link from Google Meet
+- Share the meeting link with the customer via chat
+
+#### Deleting Chat Sessions
+1. Select the chat session you want to delete
+2. Click the **"Delete"** button (red trash icon) next to the status dropdown
+3. A confirmation dialog appears
+4. Click **"OK"** to confirm deletion
+5. The chat session and all its messages are soft-deleted
+6. Deleted sessions no longer appear in the inbox
+7. **Note:** Deleted sessions can be recovered from the database if needed
 
 #### Features
 - **Search** - Type in the search box to filter sessions by customer ID
 - **Real-time Updates** - New customer messages appear automatically
 - **Message Timestamps** - See when each message was sent
+- **Mobile Responsive** - Full functionality on mobile devices
+- **No Duplicate Messages** - Messages appear only once
 
 ---
 
@@ -299,11 +311,13 @@ Control when you receive email notifications:
 - Maximum: 300 seconds (5 minutes)
 - Shows countdown timer when active
 
-**Theme Preference**
-- **Light Mode**: Always use light theme
-- **Dark Mode**: Always use dark theme
-- **Auto**: Automatically matches your system preference
-- Changes apply immediately
+**Theme Preference (Global Setting)**
+- **Light Mode**: All users (admin, customers, visitors) see light theme
+- **Dark Mode**: All users see dark theme
+- **Auto**: All users see theme that matches their system preference
+- Changes apply immediately to all users
+- Theme is stored in database, not locally
+- Frontend polls for theme changes every 5 seconds
 
 #### How to Change System Settings
 1. Go to **Settings** tab
@@ -431,7 +445,19 @@ A: Update the `ADMIN_EMAIL` environment variable in the backend `.env` file. Thi
 A: Yes! Go to Settings → System Configuration → Toggle "Auto Refresh" OFF.
 
 **Q: How do I switch to dark mode?**
-A: Go to Settings → System Configuration → Theme Preference → Select "Dark Mode" or "Auto".
+A: Go to Settings → System Configuration → Theme Preference → Select "Dark Mode" or "Auto". Note: This changes the theme for ALL users (customers, admins, visitors), not just you.
+
+**Q: Can I delete a chat session?**
+A: Yes! Select the chat session, click the "Delete" button, and confirm. The session will be soft-deleted (removed from view but recoverable from database).
+
+**Q: What happens when I delete a chat session?**
+A: The chat session and all its messages are marked as deleted. They no longer appear in the inbox but can be recovered from the database if needed. An audit log is created recording who deleted it and when.
+
+**Q: Why do messages sometimes appear twice?**
+A: This has been fixed! Messages now appear only once. The system uses API calls with Socket.IO broadcasting and duplicate prevention.
+
+**Q: Can I use the admin dashboard on my phone?**
+A: Yes! The admin dashboard is fully mobile responsive. Use the hamburger menu (☰) to open the sidebar on mobile devices.
 
 **Q: What if I lose my chat history?**
 A: Chat history is stored in the database and persists. If you don't see a session, check the search box or verify database connection.
@@ -477,5 +503,5 @@ A: Chat history is stored in the database and persists. If you don't see a sessi
 
 ---
 
-*Last Updated: 2024*
-*Version: 1.0*
+*Last Updated: January 2026*
+*Version: 3.0*

@@ -4,12 +4,27 @@ A comprehensive service-booking web application for home care services, featurin
 
 ## 🚀 Features
 
+### Customer Features
 - **Landing Page**: Marketing-focused homepage with services overview, testimonials, and CTAs
 - **Service Booking**: Two booking options - in-app chat or WhatsApp
-- **Real-time Chat**: WebSocket-based chat system for customer support
+- **Real-time Chat**: WebSocket-based chat system for customer support with duplicate message prevention
 - **Review System**: Public review submission with admin moderation
-- **Admin Dashboard**: Firebase-authenticated admin panel for managing chats and reviews
 - **Mobile Responsive**: Fully responsive design for all devices
+- **Global Theme**: Theme automatically matches admin's global setting (light/dark/auto)
+
+### Admin Features
+- **Admin Dashboard**: Firebase-authenticated admin panel for managing chats and reviews
+- **Chat Management**: View all sessions, send messages, update status, delete sessions
+- **Review Moderation**: Approve or reject customer reviews
+- **Settings Management**:
+  - Notification preferences (email, chat alerts, review alerts)
+  - Profile settings (display name)
+  - System configuration (auto-refresh, refresh interval, global theme)
+- **Google Meet Integration**: Quick access to create video consultations
+- **Soft Delete**: Delete chat sessions with data recovery capability
+- **Audit Logging**: All deletions are logged with admin details and timestamps
+- **Mobile Responsive**: Fully functional admin dashboard on mobile devices
+- **Real-time Updates**: Socket.IO integration for instant message delivery
 
 ## 🛠️ Tech Stack
 
@@ -288,13 +303,20 @@ See [ARCHITECTURE.md](./docs/ARCHITECTURE.md) for detailed architecture document
 - `GET /api/reviews/approved` - Get approved reviews
 
 ### Admin (Protected)
-- `GET /api/admin/chat/sessions` - Get all sessions
+- `GET /api/admin/chat/sessions` - Get all sessions (excluding soft-deleted)
 - `GET /api/admin/chat/sessions/:sessionId/messages` - Get messages for a session
 - `POST /api/admin/chat/sessions/:sessionId/messages` - Send admin message
 - `PATCH /api/admin/chat/sessions/:sessionId/status` - Update status
+- `DELETE /api/admin/chat/sessions/:sessionId` - Soft delete chat session
 - `GET /api/admin/reviews` - Get all reviews
 - `PATCH /api/admin/reviews/:reviewId/approve` - Approve review
 - `DELETE /api/admin/reviews/:reviewId/reject` - Reject review
+- `GET /api/admin/settings/notifications` - Get notification preferences
+- `PATCH /api/admin/settings/notifications` - Update notification preferences
+- `PATCH /api/admin/settings/theme` - Update global theme
+
+### Public Settings
+- `GET /api/settings/theme` - Get global theme (no auth required)
 
 ## 🧪 Testing
 
@@ -311,15 +333,49 @@ pnpm test:watch  # Watch mode
 pnpm test:coverage  # With coverage report
 ```
 
+**Test Coverage:**
+- ✅ Chat Session Service (create, get, update, delete, soft delete)
+- ✅ Chat Session Controller (all endpoints, Socket.IO broadcast)
+- ✅ Message Repository (soft delete, filtering)
+- ✅ Review Service and Controller
+- ✅ Settings Controller (global theme, notifications)
+- ✅ Global Settings Service
+- ✅ Auth Middleware
+- ✅ Email Service
+- ✅ Notification Preferences Service
+
+**Total:** 131 tests passing across 8 test suites
+
 ## 📚 Additional Documentation
 
+- [Product Requirements Document (PRD)](./docs/PRD.md) - Complete feature specifications and requirements
 - [User Manual](./docs/USER_MANUAL.md) - Complete user guide for customers and admins
 - [Deployment Guide](./docs/DEPLOYMENT_GUIDE.md) - Domain setup and Railway deployment instructions
 - [Frontend README](./frontend/README.md) - Frontend-specific documentation
 - [Backend README](./backend/README.md) - Backend-specific documentation
 - [Setup Guide](./docs/SETUP_GUIDE.md) - Complete setup instructions
 - [Architecture Documentation](./docs/ARCHITECTURE.md) - System architecture and design patterns
-- [Installation Guide](./INSTALLATION_GUIDE.md) - Quick installation steps
+- [Installation Guide](./docs/INSTALLATION_GUIDE.md) - Quick installation steps
+- [Firebase Setup](./docs/FIREBASE_SETUP.md) - Firebase configuration guide
+- [WhatsApp Setup](./docs/WHATSAPP_SETUP.md) - WhatsApp integration guide
+
+## ✨ Recent Updates (v3.0)
+
+### New Features
+- ✅ **Global Theme Management**: Admin-controlled theme that applies to all users (light/dark/auto)
+- ✅ **Chat Session Deletion**: Soft delete with confirmation and audit logging
+- ✅ **Mobile Responsive Admin Dashboard**: Full functionality on mobile devices with hamburger menu
+- ✅ **Duplicate Message Prevention**: Fixed issue where messages appeared twice
+- ✅ **Soft Deletes**: Chat sessions and messages can be recovered from database
+- ✅ **Audit Logging**: All deletions logged with admin details and timestamps
+- ✅ **Enhanced Settings**: Notification preferences, profile settings, system configuration
+
+### Technical Improvements
+- ✅ Socket.IO broadcast from API endpoints (prevents duplicates)
+- ✅ Duplicate message detection in frontend Socket.IO listeners
+- ✅ Mobile-first responsive design
+- ✅ Comprehensive unit test coverage (131 tests)
+- ✅ Production-ready codebase
 
 ## 📄 License
 

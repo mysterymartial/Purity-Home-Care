@@ -246,6 +246,26 @@ Request → Route → Middleware → Controller → Service
 
 ### Real-time Message Flow
 
+**Via API (Recommended)**:
+```
+1. Client → POST /api/chat/sessions/:sessionId/messages
+   ↓
+2. Controller (ChatSessionController.createMessage)
+   ↓
+3. Service (ChatSessionService.createMessage)
+   ↓
+4. Repository (MessageRepository.create)
+   ↓
+5. Model (MessageModel.save)
+   ↓
+6. MongoDB Atlas
+   ↓
+7. Controller broadcasts via Socket.IO to all clients in session room
+   ↓
+8. Clients receive message via Socket.IO listener (with duplicate prevention)
+```
+
+**Via Socket.IO (Alternative)**:
 ```
 1. Client → Socket.IO emit('message')
    ↓
@@ -261,6 +281,8 @@ Request → Route → Middleware → Controller → Service
    ↓
 7. Socket.IO broadcast to all clients in room
 ```
+
+**Note**: The frontend uses API calls for message creation, which automatically broadcasts via Socket.IO. This prevents duplicate messages by ensuring a single source of truth.
 
 ## Technology Stack
 

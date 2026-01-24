@@ -11,6 +11,10 @@ const mockUpdateStatus = jest.fn();
 const mockGetSession = jest.fn();
 const mockDeleteSession = jest.fn();
 
+// Mock Socket.IO
+const mockEmit = jest.fn();
+const mockTo = jest.fn(() => ({ emit: mockEmit }));
+
 jest.mock('../../services/ChatSession.service', () => {
   return {
     ChatSessionService: jest.fn().mockImplementation(() => {
@@ -25,6 +29,12 @@ jest.mock('../../services/ChatSession.service', () => {
   };
 });
 
+jest.mock('../../index', () => ({
+  io: {
+    to: mockTo,
+  },
+}));
+
 describe('ChatSessionController', () => {
   let controller: ChatSessionController;
   let mockRequest: Partial<Request>;
@@ -32,6 +42,7 @@ describe('ChatSessionController', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockTo.mockReturnValue({ emit: mockEmit });
     controller = new ChatSessionController();
 
     mockRequest = {
@@ -92,6 +103,9 @@ describe('ChatSessionController', () => {
 
       expect(mockResponse.status).toHaveBeenCalledWith(201);
       expect(mockResponse.json).toHaveBeenCalledWith(mockMessage);
+      // Verify Socket.IO broadcast was called
+      expect(mockTo).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+      expect(mockEmit).toHaveBeenCalledWith('message', mockMessage);
     });
 
     it('should reject empty content', async () => {
@@ -119,6 +133,41 @@ describe('ChatSessionController', () => {
       mockRequest.body = { content: 123 };
 
       await controller.createMessage(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Message content is required' });
+    });
+  });
+
+  describe('createAdminMessage', () => {
+    it('should create admin message with valid content and broadcast', async () => {
+      mockRequest.params = { sessionId: '507f1f77bcf86cd799439011' };
+      mockRequest.body = { content: 'Admin response' };
+
+      const mockMessage = {
+        _id: '507f1f77bcf86cd799439012',
+        chatSessionId: '507f1f77bcf86cd799439011',
+        sender: 'admin' as const,
+        content: 'Admin response',
+        timestamp: '2024-01-01T00:00:00.000Z',
+      };
+
+      mockCreateMessage.mockResolvedValue(mockMessage);
+
+      await controller.createAdminMessage(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith(mockMessage);
+      // Verify Socket.IO broadcast was called
+      expect(mockTo).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+      expect(mockEmit).toHaveBeenCalledWith('message', mockMessage);
+    });
+
+    it('should reject empty content', async () => {
+      mockRequest.params = { sessionId: '507f1f77bcf86cd799439011' };
+      mockRequest.body = { content: '' };
+
+      await controller.createAdminMessage(mockRequest as Request, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Message content is required' });

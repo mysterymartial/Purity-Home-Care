@@ -24,7 +24,7 @@ import {
 } from '@/lib/api';
 import { io, Socket } from 'socket.io-client';
 import { format } from 'date-fns';
-import { MessageSquare, Star, Settings, LogOut, Bell, Search, Video, Check, X, User, Mail, Save, Globe, Clock, Trash2 } from 'lucide-react';
+import { MessageSquare, Star, Settings, LogOut, Bell, Search, Video, Check, X, User, Mail, Save, Globe, Clock, Trash2, Menu } from 'lucide-react';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -60,6 +60,7 @@ export default function AdminDashboard() {
   });
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [refreshIntervalId, setRefreshIntervalId] = useState<NodeJS.Timeout | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!auth) {
@@ -226,7 +227,13 @@ export default function AdminDashboard() {
       });
 
       socketConnection.on('message', (message: Message) => {
-        setSessionMessages((prev) => [...prev, message]);
+        setSessionMessages((prev) => {
+          // Prevent duplicate messages by checking if message already exists
+          if (prev.some(m => m._id === message._id)) {
+            return prev;
+          }
+          return [...prev, message];
+        });
       });
 
       setSocket(socketConnection);
@@ -428,20 +435,38 @@ export default function AdminDashboard() {
 
   return (
     <div className={`min-h-screen flex ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className={`w-64 flex flex-col ${isDark ? 'bg-gray-800 border-r border-gray-700' : 'bg-teal-900'} text-white`}>
+      <div className={`fixed lg:static inset-y-0 left-0 z-50 w-64 flex flex-col transform transition-transform duration-300 ease-in-out ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      } ${isDark ? 'bg-gray-800 border-r border-gray-700' : 'bg-teal-900'} text-white`}>
         <div className={`p-6 border-b ${isDark ? 'border-gray-700' : 'border-teal-800'}`}>
-          <div className="flex items-center space-x-2 mb-2">
-            <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0">
-              <img
-                src="/logo.jpg"
-                alt="Purity Home Care Logo"
-                className="w-full h-full object-contain"
-              />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0">
+                <img
+                  src="/logo.jpg"
+                  alt="Purity Home Care Logo"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div>
+                <div className={`text-xs ${isDark ? 'text-gray-300' : 'text-teal-300'}`}>ADMIN PANEL</div>
+              </div>
             </div>
-            <div>
-              <div className={`text-xs ${isDark ? 'text-gray-300' : 'text-teal-300'}`}>ADMIN PANEL</div>
-            </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden text-white hover:text-gray-300"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
           <Link href="/" className={`inline-block text-xs mt-3 transition-colors ${isDark ? 'text-gray-300 hover:text-white' : 'text-teal-200 hover:text-white'}`}>
             ← Home
@@ -516,21 +541,29 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col w-full lg:w-auto">
         {/* Header */}
-        <div className={`border-b px-6 py-4 flex items-center justify-between ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-          <div>
-            <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Dashboard {'>'} {activeTab === 'inbox' ? 'Inbox' : activeTab === 'reviews' ? 'Reviews' : 'Settings'}</div>
+        <div className={`border-b px-4 lg:px-6 py-4 flex items-center justify-between ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden text-gray-600 dark:text-gray-300"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <div>
+              <div className={`text-xs lg:text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Dashboard {'>'} {activeTab === 'inbox' ? 'Inbox' : activeTab === 'reviews' ? 'Reviews' : 'Settings'}</div>
+            </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <Bell className={`w-5 h-5 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />
-            <span className={`text-sm font-semibold ${isDark ? 'text-green-400' : 'text-green-600'}`}>System Status: ONLINE</span>
+          <div className="flex items-center space-x-2 lg:space-x-4">
+            <Bell className={`w-4 h-4 lg:w-5 lg:h-5 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />
+            <span className={`text-xs lg:text-sm font-semibold ${isDark ? 'text-green-400' : 'text-green-600'}`}>ONLINE</span>
           </div>
         </div>
 
-        <div className="flex-1 flex">
+        <div className="flex-1 flex flex-col lg:flex-row">
           {/* Left Panel - List */}
-          <div className={`w-80 border-r ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <div className={`w-full lg:w-80 border-b lg:border-b-0 lg:border-r ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
             <div className={`p-4 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
               <div className="relative">
                 <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
@@ -549,7 +582,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="overflow-y-auto" style={{ height: 'calc(100vh - 200px)' }}>
+            <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
               {activeTab === 'settings' ? (
                 <div className={`p-4 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                   <Settings className={`w-8 h-8 mx-auto mb-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
@@ -637,24 +670,24 @@ export default function AdminDashboard() {
           </div>
 
           {/* Right Panel - Detail */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col min-w-0">
             {activeTab === 'inbox' && selectedSession ? (
               <>
-                <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b p-4 flex items-center justify-between`}>
+                <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b p-3 lg:p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3`}>
                   <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    <div className={`w-8 h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                       isDark ? 'bg-teal-900/50' : 'bg-teal-100'
                     }`}>
-                      <span className={`font-semibold ${isDark ? 'text-teal-300' : 'text-teal-600'}`}>
+                      <span className={`font-semibold text-xs lg:text-base ${isDark ? 'text-teal-300' : 'text-teal-600'}`}>
                         {selectedSession.customerId.substring(0, 2).toUpperCase()}
                       </span>
                     </div>
-                    <div>
-                      <div className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{selectedSession.customerId.substring(0, 20)}...</div>
-                      <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>• Online</div>
+                    <div className="min-w-0 flex-1">
+                      <div className={`font-semibold text-sm lg:text-base truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{selectedSession.customerId.substring(0, 20)}...</div>
+                      <div className={`text-xs lg:text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>• Online</div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center flex-wrap gap-2">
                     <select
                       value={selectedSession.status}
                       onChange={(e) =>
@@ -662,7 +695,7 @@ export default function AdminDashboard() {
                           e.target.value as 'Pending' | 'Confirmed' | 'Completed'
                         )
                       }
-                      className={`border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+                      className={`border rounded-lg px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 flex-1 lg:flex-none min-w-[120px] ${
                         isDark 
                           ? 'bg-gray-700 border-gray-600 text-white' 
                           : 'bg-white border-gray-300 text-gray-900'
@@ -676,24 +709,25 @@ export default function AdminDashboard() {
                       href="https://meet.google.com/new"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700 dark:hover:bg-teal-500 transition flex items-center space-x-2`}
+                      className={`bg-teal-600 text-white px-2 lg:px-4 py-1.5 lg:py-2 rounded-lg text-xs lg:text-sm hover:bg-teal-700 dark:hover:bg-teal-500 transition flex items-center space-x-1 lg:space-x-2 flex-1 lg:flex-none justify-center`}
                     >
-                      <Video className="w-4 h-4" />
-                      <span>Create Google Meet</span>
+                      <Video className="w-3 h-3 lg:w-4 lg:h-4" />
+                      <span className="hidden sm:inline">Create Google Meet</span>
+                      <span className="sm:hidden">Meet</span>
                     </a>
                     <button
                       onClick={handleDeleteChat}
-                      className={`bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700 dark:hover:bg-red-500 transition flex items-center space-x-2`}
+                      className={`bg-red-600 text-white px-2 lg:px-4 py-1.5 lg:py-2 rounded-lg text-xs lg:text-sm hover:bg-red-700 dark:hover:bg-red-500 transition flex items-center space-x-1 lg:space-x-2 flex-1 lg:flex-none justify-center`}
                       title="Delete this chat session"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3 h-3 lg:w-4 lg:h-4" />
                       <span>Delete</span>
                     </button>
                   </div>
                 </div>
 
-                <div className={`flex-1 overflow-y-auto p-4 ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
-                  <div className={`text-center text-sm py-2 border-t border-b mb-4 ${
+                <div className={`flex-1 overflow-y-auto p-3 lg:p-4 ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+                  <div className={`text-center text-xs lg:text-sm py-2 border-t border-b mb-4 ${
                     isDark ? 'text-gray-400 border-gray-700' : 'text-gray-500 border-gray-200'
                   }`}>
                     TODAY, {format(new Date(), 'MMM d').toUpperCase()}
@@ -707,7 +741,7 @@ export default function AdminDashboard() {
                       }`}
                     >
                       <div
-                        className={`max-w-md rounded-lg p-3 ${
+                        className={`max-w-[85%] lg:max-w-md rounded-lg p-2 lg:p-3 ${
                           message.sender === 'admin'
                             ? 'bg-teal-600 text-white'
                             : isDark 
@@ -715,7 +749,7 @@ export default function AdminDashboard() {
                               : 'bg-white text-gray-900'
                         }`}
                       >
-                        <p>{message.content}</p>
+                        <p className="text-sm lg:text-base break-words">{message.content}</p>
                         <p
                           className={`text-xs mt-1 ${
                             message.sender === 'admin' 
@@ -730,7 +764,7 @@ export default function AdminDashboard() {
                   ))}
                 </div>
 
-                <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-t p-4`}>
+                <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-t p-3 lg:p-4`}>
                   <form
                     onSubmit={async (e) => {
                       e.preventDefault();
@@ -743,24 +777,17 @@ export default function AdminDashboard() {
                         const content = messageInput.trim();
                         setMessageInput('');
 
-                        const newMessage = await sendAdminMessage(selectedSession._id, content, token);
-                        setSessionMessages((prev) => [...prev, newMessage]);
-
-                        if (socket) {
-                          socket.emit('message', {
-                            sessionId: selectedSession._id,
-                            content,
-                            sender: 'admin',
-                          });
-                        }
+                        // Only use API call - Socket.IO listener will handle adding to state
+                        await sendAdminMessage(selectedSession._id, content, token);
+                        // Don't manually add to state or emit via socket - let Socket.IO handle it
                       } catch (error) {
                         console.error('Failed to send message:', error);
-                        setMessageInput(messageInput); // Restore on error
+                        setMessageInput(content); // Restore on error
                       }
                     }}
                     className="flex items-center space-x-2"
                   >
-                    <button type="button" className={`p-2 ${isDark ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
+                    <button type="button" className={`p-2 flex-shrink-0 ${isDark ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
                       <span className="text-xl">+</span>
                     </button>
                     <input
@@ -768,7 +795,7 @@ export default function AdminDashboard() {
                       value={messageInput}
                       onChange={(e) => setMessageInput(e.target.value)}
                       placeholder="Type your message..."
-                      className={`flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+                      className={`flex-1 border rounded-lg px-3 lg:px-4 py-2 text-sm lg:text-base focus:outline-none focus:ring-2 focus:ring-teal-500 ${
                         isDark 
                           ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
                           : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
@@ -776,16 +803,16 @@ export default function AdminDashboard() {
                     />
                     <button
                       type="submit"
-                      className="bg-teal-600 text-white p-2 rounded-lg hover:bg-teal-700 dark:hover:bg-teal-500 transition"
+                      className="bg-teal-600 text-white p-2 rounded-lg hover:bg-teal-700 dark:hover:bg-teal-500 transition flex-shrink-0"
                     >
-                      <MessageSquare className="w-5 h-5" />
+                      <MessageSquare className="w-4 h-4 lg:w-5 lg:h-5" />
                     </button>
                   </form>
                 </div>
               </>
             ) : activeTab === 'reviews' ? (
-              <div className={`flex-1 p-6 ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
-                <h2 className={`text-2xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Review Moderation</h2>
+              <div className={`flex-1 p-4 lg:p-6 ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+                <h2 className={`text-xl lg:text-2xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Review Moderation</h2>
                 <div className="space-y-4">
                   {reviews.map((review) => (
                     <div key={review._id} className={`rounded-lg shadow p-6 ${
@@ -823,21 +850,21 @@ export default function AdminDashboard() {
                       {review.text && (
                         <p className={`mb-4 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{review.text}</p>
                       )}
-                      <div className="flex items-center justify-between">
-                        <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                        <span className={`text-xs lg:text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                           {format(new Date(review.createdAt), 'MMMM d, yyyy')}
                         </span>
                         {!review.approved && (
-                          <div className="flex space-x-2">
+                          <div className="flex space-x-2 w-full sm:w-auto">
                             <button
                               onClick={() => handleApproveReview(review._id)}
-                              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 dark:hover:bg-green-500 transition"
+                              className="bg-green-600 text-white px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg text-sm hover:bg-green-700 dark:hover:bg-green-500 transition flex-1 sm:flex-none"
                             >
                               Approve
                             </button>
                             <button
                               onClick={() => handleRejectReview(review._id)}
-                              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 dark:hover:bg-red-500 transition"
+                              className="bg-red-600 text-white px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg text-sm hover:bg-red-700 dark:hover:bg-red-500 transition flex-1 sm:flex-none"
                             >
                               Reject
                             </button>
@@ -849,23 +876,23 @@ export default function AdminDashboard() {
                 </div>
               </div>
             ) : activeTab === 'settings' ? (
-              <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-gray-900' : 'bg-gray-50'} p-6`}>
-                <div className="max-w-4xl mx-auto space-y-6">
+              <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-gray-900' : 'bg-gray-50'} p-4 lg:p-6`}>
+                <div className="max-w-4xl mx-auto space-y-4 lg:space-y-6">
                   {/* Header Section */}
-                  <div className="mb-8">
+                  <div className="mb-6 lg:mb-8">
                     <div className="flex items-center space-x-3 mb-3">
-                      <div className={`p-3 rounded-xl ${isDark ? 'bg-gray-800' : 'bg-teal-50'}`}>
-                        <Settings className={`w-8 h-8 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} />
+                      <div className={`p-2 lg:p-3 rounded-xl ${isDark ? 'bg-gray-800' : 'bg-teal-50'}`}>
+                        <Settings className={`w-6 h-6 lg:w-8 lg:h-8 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} />
                       </div>
                       <div>
-                        <h2 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'} mb-1`}>Settings</h2>
-                        <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Manage your account preferences and system configuration</p>
+                        <h2 className={`text-xl lg:text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'} mb-1`}>Settings</h2>
+                        <p className={`text-sm lg:text-base ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Manage your account preferences and system configuration</p>
                       </div>
                     </div>
                     {systemSettings.autoRefresh && (
-                      <div className={`mt-4 p-3 rounded-lg flex items-center space-x-2 ${isDark ? 'bg-gray-800 border border-gray-700' : 'bg-blue-50 border border-blue-200'}`}>
-                        <div className={`animate-spin rounded-full h-4 w-4 border-b-2 ${isDark ? 'border-teal-400' : 'border-blue-600'}`}></div>
-                        <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-blue-700'}`}>
+                      <div className={`mt-4 p-2 lg:p-3 rounded-lg flex items-center space-x-2 ${isDark ? 'bg-gray-800 border border-gray-700' : 'bg-blue-50 border border-blue-200'}`}>
+                        <div className={`animate-spin rounded-full h-3 w-3 lg:h-4 lg:w-4 border-b-2 ${isDark ? 'border-teal-400' : 'border-blue-600'}`}></div>
+                        <span className={`text-xs lg:text-sm ${isDark ? 'text-gray-300' : 'text-blue-700'}`}>
                           Auto-refresh enabled: Refreshing every {systemSettings.refreshInterval} seconds
                         </span>
                       </div>
@@ -874,35 +901,35 @@ export default function AdminDashboard() {
 
                   {/* Notification Settings */}
                   <div className={`rounded-xl shadow-lg overflow-hidden transition-all duration-300 ${isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-                    <div className={`p-6 border-b ${isDark ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gradient-to-r from-teal-50 to-blue-50'}`}>
+                    <div className={`p-4 lg:p-6 border-b ${isDark ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gradient-to-r from-teal-50 to-blue-50'}`}>
                       <div className="flex items-center space-x-3">
                         <div className={`p-2 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-teal-100'}`}>
-                          <Bell className={`w-6 h-6 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} />
+                          <Bell className={`w-5 h-5 lg:w-6 lg:h-6 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} />
                         </div>
                         <div>
-                          <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Notification Preferences</h3>
-                          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Control how and when you receive notifications</p>
+                          <h3 className={`text-lg lg:text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Notification Preferences</h3>
+                          <p className={`text-xs lg:text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Control how and when you receive notifications</p>
                         </div>
                       </div>
                     </div>
-                    <div className="p-6 space-y-5">
+                    <div className="p-4 lg:p-6 space-y-4 lg:space-y-5">
                       {[
                         { key: 'emailNotifications', title: 'Email Notifications', desc: 'Receive email updates about system activities', icon: Mail },
                         { key: 'newChatAlerts', title: 'New Chat Alerts', desc: 'Get notified when new chat sessions are created', icon: MessageSquare },
                         { key: 'reviewAlerts', title: 'Review Alerts', desc: 'Get notified when new reviews are submitted', icon: Star },
                       ].map((item) => (
-                        <label key={item.key} className={`flex items-center justify-between p-4 rounded-lg cursor-pointer transition-all duration-200 group ${
+                        <label key={item.key} className={`flex items-center justify-between p-3 lg:p-4 rounded-lg cursor-pointer transition-all duration-200 group ${
                           isDark 
                             ? 'hover:bg-gray-700/50 border border-gray-700' 
                             : 'hover:bg-gray-50 border border-gray-100'
                         }`}>
-                          <div className="flex items-center space-x-4 flex-1">
-                            <div className={`p-2 rounded-lg ${isDark ? 'bg-gray-700 group-hover:bg-gray-600' : 'bg-gray-100 group-hover:bg-gray-200'}`}>
-                              <item.icon className={`w-5 h-5 ${isDark ? 'text-gray-300' : 'text-gray-600'}`} />
+                          <div className="flex items-center space-x-3 lg:space-x-4 flex-1 min-w-0">
+                            <div className={`p-1.5 lg:p-2 rounded-lg flex-shrink-0 ${isDark ? 'bg-gray-700 group-hover:bg-gray-600' : 'bg-gray-100 group-hover:bg-gray-200'}`}>
+                              <item.icon className={`w-4 h-4 lg:w-5 lg:h-5 ${isDark ? 'text-gray-300' : 'text-gray-600'}`} />
                             </div>
-                            <div className="flex-1">
-                              <div className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.title}</div>
-                              <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{item.desc}</div>
+                            <div className="flex-1 min-w-0">
+                              <div className={`font-semibold mb-1 text-sm lg:text-base ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.title}</div>
+                              <div className={`text-xs lg:text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{item.desc}</div>
                             </div>
                           </div>
                           <div className="relative">
@@ -928,18 +955,18 @@ export default function AdminDashboard() {
 
                   {/* Profile Settings */}
                   <div className={`rounded-xl shadow-lg overflow-hidden transition-all duration-300 ${isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-                    <div className={`p-6 border-b ${isDark ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50'}`}>
+                    <div className={`p-4 lg:p-6 border-b ${isDark ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50'}`}>
                       <div className="flex items-center space-x-3">
                         <div className={`p-2 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-blue-100'}`}>
-                          <User className={`w-6 h-6 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                          <User className={`w-5 h-5 lg:w-6 lg:h-6 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
                         </div>
                         <div>
-                          <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Profile Information</h3>
-                          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Manage your personal account details</p>
+                          <h3 className={`text-lg lg:text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Profile Information</h3>
+                          <p className={`text-xs lg:text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Manage your personal account details</p>
                         </div>
                       </div>
                     </div>
-                    <div className="p-6 space-y-6">
+                    <div className="p-4 lg:p-6 space-y-4 lg:space-y-6">
                       <div>
                         <label className={`block text-sm font-semibold mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                           Display Name
@@ -983,30 +1010,30 @@ export default function AdminDashboard() {
 
                   {/* System Settings */}
                   <div className={`rounded-xl shadow-lg overflow-hidden transition-all duration-300 ${isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-                    <div className={`p-6 border-b ${isDark ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50'}`}>
+                    <div className={`p-4 lg:p-6 border-b ${isDark ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50'}`}>
                       <div className="flex items-center space-x-3">
                         <div className={`p-2 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-purple-100'}`}>
-                          <Globe className={`w-6 h-6 ${isDark ? 'text-purple-400' : 'text-purple-600'}`} />
+                          <Globe className={`w-5 h-5 lg:w-6 lg:h-6 ${isDark ? 'text-purple-400' : 'text-purple-600'}`} />
                         </div>
                         <div>
-                          <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>System Configuration</h3>
-                          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Customize system behavior and appearance</p>
+                          <h3 className={`text-lg lg:text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>System Configuration</h3>
+                          <p className={`text-xs lg:text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Customize system behavior and appearance</p>
                         </div>
                       </div>
                     </div>
-                    <div className="p-6 space-y-6">
-                      <label className={`flex items-center justify-between p-4 rounded-lg cursor-pointer transition-all duration-200 group ${
+                    <div className="p-4 lg:p-6 space-y-4 lg:space-y-6">
+                      <label className={`flex items-center justify-between p-3 lg:p-4 rounded-lg cursor-pointer transition-all duration-200 group ${
                         isDark 
                           ? 'hover:bg-gray-700/50 border border-gray-700' 
                           : 'hover:bg-gray-50 border border-gray-100'
                       }`}>
-                        <div className="flex items-center space-x-4 flex-1">
-                          <div className={`p-2 rounded-lg ${isDark ? 'bg-gray-700 group-hover:bg-gray-600' : 'bg-gray-100 group-hover:bg-gray-200'}`}>
-                            <Clock className={`w-5 h-5 ${isDark ? 'text-gray-300' : 'text-gray-600'}`} />
+                        <div className="flex items-center space-x-3 lg:space-x-4 flex-1 min-w-0">
+                          <div className={`p-1.5 lg:p-2 rounded-lg flex-shrink-0 ${isDark ? 'bg-gray-700 group-hover:bg-gray-600' : 'bg-gray-100 group-hover:bg-gray-200'}`}>
+                            <Clock className={`w-4 h-4 lg:w-5 lg:h-5 ${isDark ? 'text-gray-300' : 'text-gray-600'}`} />
                           </div>
-                          <div className="flex-1">
-                            <div className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>Auto Refresh</div>
-                            <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Automatically refresh data at specified intervals</div>
+                          <div className="flex-1 min-w-0">
+                            <div className={`font-semibold mb-1 text-sm lg:text-base ${isDark ? 'text-white' : 'text-gray-900'}`}>Auto Refresh</div>
+                            <div className={`text-xs lg:text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Automatically refresh data at specified intervals</div>
                           </div>
                         </div>
                         <div className="relative">
@@ -1027,8 +1054,8 @@ export default function AdminDashboard() {
                         </div>
                       </label>
                       {systemSettings.autoRefresh && (
-                        <div className={`ml-12 p-4 rounded-lg ${isDark ? 'bg-gray-700/50 border border-gray-600' : 'bg-gray-50 border border-gray-200'}`}>
-                          <label className={`block text-sm font-semibold mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <div className={`ml-0 lg:ml-12 p-3 lg:p-4 rounded-lg ${isDark ? 'bg-gray-700/50 border border-gray-600' : 'bg-gray-50 border border-gray-200'}`}>
+                          <label className={`block text-xs lg:text-sm font-semibold mb-2 lg:mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                             Refresh Interval (seconds)
                           </label>
                           <input
@@ -1037,15 +1064,15 @@ export default function AdminDashboard() {
                             max="300"
                             value={systemSettings.refreshInterval}
                             onChange={(e) => setSystemSettings(prev => ({ ...prev, refreshInterval: parseInt(e.target.value) || 30 }))}
-                            className={`w-full rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all ${
+                            className={`w-full rounded-lg px-3 lg:px-4 py-2 lg:py-3 text-sm lg:text-base focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all ${
                               isDark 
                                 ? 'bg-gray-700 border border-gray-600 text-white' 
                                 : 'bg-white border border-gray-300 text-gray-900'
                             }`}
                           />
-                          <div className="flex items-center justify-between mt-2">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-2 gap-1">
                             <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                              Minimum: 10 seconds, Maximum: 300 seconds
+                              Min: 10s, Max: 300s
                             </p>
                             <span className={`text-xs font-medium ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>
                               {Math.floor(systemSettings.refreshInterval / 60)}m {systemSettings.refreshInterval % 60}s
@@ -1054,7 +1081,7 @@ export default function AdminDashboard() {
                         </div>
                       )}
                       <div>
-                        <label className={`block text-sm font-semibold mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <label className={`block text-xs lg:text-sm font-semibold mb-2 lg:mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                           Theme Preference
                         </label>
                         <select
@@ -1065,7 +1092,7 @@ export default function AdminDashboard() {
                               setSystemSettings(prev => ({ ...prev, theme: themeValue }));
                             }
                           }}
-                          className={`w-full rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all ${
+                          className={`w-full rounded-lg px-3 lg:px-4 py-2 lg:py-3 text-sm lg:text-base focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all ${
                             isDark 
                               ? 'bg-gray-700 border border-gray-600 text-white' 
                               : 'bg-white border border-gray-300 text-gray-900'
@@ -1087,11 +1114,11 @@ export default function AdminDashboard() {
                   </div>
 
                   {/* Save Button */}
-                  <div className={`sticky bottom-0 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} pt-6 pb-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-                    <div className="flex justify-end space-x-4">
+                  <div className={`sticky bottom-0 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} pt-4 lg:pt-6 pb-3 lg:pb-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+                    <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-4">
                       <button
                         onClick={() => setActiveTab('inbox')}
-                        className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                        className={`px-4 lg:px-6 py-2 lg:py-3 rounded-lg text-sm lg:text-base font-semibold transition-all duration-200 ${
                           isDark 
                             ? 'border border-gray-600 text-gray-300 hover:bg-gray-800 hover:border-gray-500' 
                             : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -1102,16 +1129,16 @@ export default function AdminDashboard() {
                       <button
                         onClick={handleSaveSettings}
                         disabled={settingsSaving}
-                        className="px-8 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-all duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none font-semibold"
+                        className="px-6 lg:px-8 py-2 lg:py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none font-semibold text-sm lg:text-base"
                       >
                         {settingsSaving ? (
                           <>
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 lg:h-5 lg:w-5 border-b-2 border-white"></div>
                             <span>Saving Changes...</span>
                           </>
                         ) : (
                           <>
-                            <Save className="w-5 h-5" />
+                            <Save className="w-4 h-4 lg:w-5 lg:h-5" />
                             <span>Save All Settings</span>
                           </>
                         )}

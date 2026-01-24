@@ -1,10 +1,11 @@
 # Product Requirements Document (PRD)
 ## Purity Home Care - Service Booking Platform
 
-**Version:** 1.0  
+**Version:** 3.0  
 **Date:** January 2026  
 **Status:** Production Ready  
-**Document Owner:** Product Team
+**Document Owner:** Product Team  
+**Last Updated:** January 2026 (v3.0 - Complete feature documentation including Global Theme, Delete Chat, Mobile Responsive, Duplicate Message Fix, Soft Deletes, Audit Logging)
 
 ---
 
@@ -34,11 +35,17 @@ Purity Home Care is a comprehensive service-booking web application that enables
 ### 2.1 In Scope
 - Landing page with service information
 - Service booking via in-app chat or WhatsApp
-- Real-time chat system
+- Real-time chat system with duplicate message prevention
 - Review submission and moderation
 - Admin dashboard for chat and review management
 - Firebase authentication for admin access
 - MongoDB database for data persistence
+- Global theme management (light/dark/auto) - database-driven
+- Soft delete functionality for chat sessions (data recovery)
+- Audit logging for critical operations
+- Mobile responsive design (all pages)
+- Email notifications for admin
+- Google Meet integration for video consultations
 
 ### 2.2 Out of Scope (Future Enhancements)
 - Payment processing
@@ -127,6 +134,21 @@ Purity Home Care is a comprehensive service-booking web application that enables
 - **As an** admin
 - **I want to** create Google Meet links for consultations
 - **So that** I can conduct video consultations with customers
+
+**US-012: Delete Chat Session**
+- **As an** admin
+- **I want to** delete chat sessions with confirmation
+- **So that** I can manage inactive or resolved conversations
+
+**US-013: Global Theme Management**
+- **As an** admin
+- **I want to** set a global theme (light/dark/auto) for all users
+- **So that** I can control the visual appearance across the entire platform
+
+**US-014: Mobile Access**
+- **As a** customer or admin
+- **I want to** access the platform on mobile devices
+- **So that** I can use the service from anywhere
 
 ---
 
@@ -218,14 +240,26 @@ Purity Home Care is a comprehensive service-booking web application that enables
 - Reviews moderation panel
 - Approve/Reject review buttons
 - Google Meet link button
+- Delete chat session with confirmation
 - Search functionality
+- Mobile responsive design
+- Settings panel with:
+  - Notification preferences (email, chat alerts, review alerts)
+  - Profile settings (display name, email)
+  - System configuration (auto-refresh, refresh interval, global theme)
+- Real-time message updates via Socket.IO
+- Duplicate message prevention
 
 **Acceptance Criteria:**
 - Only authenticated admins can access
-- All chat sessions display
+- All chat sessions display (excluding soft-deleted)
 - Admin can send messages
 - Status updates work
 - Review moderation works
+- Delete chat session works with confirmation
+- Global theme changes apply to all users
+- Mobile responsive on all screen sizes
+- Messages appear only once (no duplicates)
 
 ### 5.6 Admin Authentication (FR-006)
 **Priority:** High  
@@ -237,12 +271,72 @@ Purity Home Care is a comprehensive service-booking web application that enables
 - Redirect to dashboard on success
 - Error handling for invalid credentials
 - Token-based session management
+- Comprehensive error messages for different failure scenarios
 
 **Acceptance Criteria:**
 - Valid credentials allow access
 - Invalid credentials show error
 - Redirects work correctly
 - Token stored securely
+- User-friendly error messages
+
+### 5.7 Global Theme Management (FR-007)
+**Priority:** Medium  
+**Description:** Database-driven theme system affecting all users
+
+**Requirements:**
+- Admin can set global theme (light/dark/auto)
+- Theme stored in MongoDB (GlobalSettings collection)
+- Frontend polls for theme changes every 5 seconds
+- All users see the same theme
+- Auto mode follows system preference
+- Theme persists across page refreshes
+
+**Acceptance Criteria:**
+- Admin can change global theme from settings
+- Theme applies to all users immediately
+- Auto mode works correctly
+- Theme persists in database
+
+### 5.8 Chat Session Deletion (FR-008)
+**Priority:** Medium  
+**Description:** Soft delete functionality for chat sessions
+
+**Requirements:**
+- Delete button in admin dashboard
+- Confirmation dialog before deletion
+- Soft delete (marks as deleted, doesn't remove from database)
+- Cascade soft delete to associated messages
+- Audit logging (who deleted, when, session details)
+- Deleted sessions filtered from lists
+- Data recovery possible
+
+**Acceptance Criteria:**
+- Delete button visible for selected session
+- Confirmation dialog appears
+- Session and messages marked as deleted
+- Deleted sessions don't appear in lists
+- Audit logs created
+- Data can be recovered if needed
+
+### 5.9 Mobile Responsiveness (FR-009)
+**Priority:** High  
+**Description:** Fully responsive design for all devices
+
+**Requirements:**
+- Mobile-first approach
+- Responsive breakpoints (sm, md, lg, xl)
+- Mobile menu for admin sidebar
+- Touch-friendly buttons and inputs
+- Optimized layouts for small screens
+- All features accessible on mobile
+
+**Acceptance Criteria:**
+- All pages work on mobile devices
+- Admin dashboard fully functional on mobile
+- No horizontal scrolling
+- Touch targets are adequate size
+- Forms are usable on mobile
 
 ---
 
@@ -283,6 +377,8 @@ Purity Home Care is a comprehensive service-booking web application that enables
   _id: ObjectId,
   customerId: String (UUID, unique, indexed),
   status: Enum ['Pending', 'Confirmed', 'Completed'],
+  deletedAt: Date (optional, for soft delete),
+  deletedBy: String (optional, admin email who deleted),
   createdAt: Date,
   updatedAt: Date
 }
@@ -296,6 +392,7 @@ Purity Home Care is a comprehensive service-booking web application that enables
   sender: Enum ['customer', 'admin'],
   content: String,
   timestamp: Date,
+  deletedAt: Date (optional, for soft delete),
   createdAt: Date,
   updatedAt: Date
 }
@@ -308,6 +405,16 @@ Purity Home Care is a comprehensive service-booking web application that enables
   rating: Number (1-5),
   text: String (optional, max 1000),
   approved: Boolean (default: false),
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+**GlobalSettings Collection:**
+```typescript
+{
+  _id: ObjectId,
+  theme: Enum ['light', 'dark', 'auto'] (default: 'light'),
   createdAt: Date,
   updatedAt: Date
 }
@@ -518,6 +625,26 @@ Purity Home Care is a comprehensive service-booking web application that enables
 - **Response:** 204 No Content
 - **Status Codes:** 204 No Content, 401 Unauthorized, 404 Not Found
 
+**DELETE /api/admin/chat/sessions/:sessionId**
+- **Description:** Soft delete chat session and associated messages
+- **Auth:** Bearer token required
+- **Response:** `{ message: 'Chat session deleted successfully' }`
+- **Status Codes:** 200 OK, 401 Unauthorized, 404 Not Found, 500 Internal Server Error
+- **Audit:** Logs deletion with admin email, timestamp, session details
+
+**GET /api/settings/theme**
+- **Description:** Get global theme setting (public endpoint)
+- **Auth:** None required
+- **Response:** `{ theme: 'light' | 'dark' | 'auto' }`
+- **Status Codes:** 200 OK
+
+**PATCH /api/admin/settings/theme**
+- **Description:** Update global theme (admin only)
+- **Auth:** Bearer token required
+- **Request Body:** `{ theme: 'light' | 'dark' | 'auto' }`
+- **Response:** `{ theme: 'light' | 'dark' | 'auto' }`
+- **Status Codes:** 200 OK, 400 Bad Request, 401 Unauthorized
+
 ---
 
 ## 10. Data Models
@@ -528,6 +655,8 @@ interface ChatSession {
   _id: string;
   customerId: string; // UUID
   status: 'Pending' | 'Confirmed' | 'Completed';
+  deletedAt?: string; // ISO date (for soft delete)
+  deletedBy?: string; // Admin email who deleted
   createdAt: string; // ISO date
   updatedAt: string; // ISO date
 }
@@ -541,6 +670,7 @@ interface Message {
   sender: 'customer' | 'admin';
   content: string;
   timestamp: string; // ISO date
+  deletedAt?: string; // ISO date (for soft delete)
 }
 ```
 
@@ -552,6 +682,16 @@ interface Review {
   text?: string; // Optional, max 1000 chars
   approved: boolean;
   createdAt: string; // ISO date
+}
+```
+
+### 10.4 GlobalSettings
+```typescript
+interface GlobalSettings {
+  _id: string;
+  theme: 'light' | 'dark' | 'auto';
+  createdAt: string; // ISO date
+  updatedAt: string; // ISO date
 }
 ```
 
@@ -587,6 +727,17 @@ interface Review {
 - **Purpose:** Video consultations
 - **Implementation:** Direct link to `https://meet.google.com/new`
 - **Access:** Admin dashboard only
+- **Usage:** Admin clicks button, opens Google Meet in new tab, shares link with customer
+
+### 11.6 Email Notification System
+- **Purpose:** Notify admin of new chats, messages, and reviews
+- **Implementation:** SMTP (Gmail) via nodemailer
+- **Configuration:** Environment variables (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, ADMIN_EMAIL)
+- **Features:**
+  - New chat session notifications
+  - New message notifications
+  - New review submission notifications
+  - Admin-configurable preferences
 
 ---
 
@@ -594,13 +745,17 @@ interface Review {
 
 ### 12.1 Unit Testing
 - **Coverage Target:** 80%+
-- **Scope:** Services, Controllers, Utilities
+- **Scope:** Services, Controllers, Utilities, Repositories
 - **Framework:** Jest
 - **Focus Areas:**
   - Boundary value analysis
   - Edge cases
   - Error handling
   - Business logic validation
+  - Soft delete functionality
+  - Global theme management
+  - Socket.IO broadcast verification
+  - Duplicate message prevention
 
 ### 12.2 Integration Testing
 - **Scope:** API endpoints
@@ -646,6 +801,12 @@ interface Review {
 - ✅ Real-time chat functional
 - ✅ Admin dashboard operational
 - ✅ Review system working
+- ✅ Global theme management working
+- ✅ Chat deletion with soft delete working
+- ✅ Mobile responsive on all pages
+- ✅ Duplicate message prevention working
+- ✅ Audit logging implemented
+- ✅ Email notifications working
 
 ### 14.2 Technical Success
 - ✅ Code follows architecture patterns
@@ -714,6 +875,8 @@ interface Review {
 
 ### 17.3 Change Log
 - **v1.0** (January 2026): Initial production release
+- **v2.0** (January 2026): Added Global Theme, Delete Chat, Mobile Responsive, Duplicate Message Fix
+- **v3.0** (January 2026): Complete feature documentation, Soft Deletes, Audit Logging, Production Ready
 
 ---
 
