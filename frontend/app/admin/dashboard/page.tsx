@@ -773,16 +773,18 @@ export default function AdminDashboard() {
                       const token = await auth?.currentUser?.getIdToken();
                       if (!token) return;
 
-                      try {
-                        const content = messageInput.trim();
-                        setMessageInput('');
+                      // Store content before clearing input (needed for error recovery)
+                      const content = messageInput.trim();
+                      setMessageInput('');
 
+                      try {
                         // Only use API call - Socket.IO listener will handle adding to state
                         await sendAdminMessage(selectedSession._id, content, token);
                         // Don't manually add to state or emit via socket - let Socket.IO handle it
                       } catch (error) {
                         console.error('Failed to send message:', error);
-                        setMessageInput(content); // Restore on error
+                        // Restore input on error using the stored content
+                        setMessageInput(content);
                       }
                     }}
                     className="flex items-center space-x-2"
