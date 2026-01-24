@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { io, Socket } from 'socket.io-client';
 import { createChatSession, getChatSession, getMessages, sendMessage, Message, ChatSession } from '@/lib/api';
 import { format } from 'date-fns';
-import { getWhatsAppLink } from '@/lib/whatsapp';
+import { getWhatsAppLink, getCallLink } from '@/lib/whatsapp';
 
 export default function ChatPage() {
   const router = useRouter();
@@ -29,6 +29,7 @@ export default function ChatPage() {
   ] as const;
 
   const whatsappLink = getWhatsAppLink('Hello, I want to book a service.');
+  const callLink = getCallLink();
 
   useEffect(() => {
     const initializeChat = async () => {
@@ -206,9 +207,13 @@ export default function ChatPage() {
                 </div>
               </div>
             </div>
-            <button className="p-2 sm:p-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 rounded-lg transition-colors flex-shrink-0 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center">
+            <a
+              href={callLink}
+              className="p-2 sm:p-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 rounded-lg transition-colors flex-shrink-0 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center"
+              aria-label="Call support"
+            >
               <Phone className="w-5 h-5 sm:w-6 sm:h-6" />
-            </button>
+            </a>
           </div>
 
           {/* Messages */}
